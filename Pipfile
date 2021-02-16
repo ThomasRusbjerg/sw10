@@ -10,6 +10,8 @@ lxml = "*"
 tqdm = "*"
 muscima = "*"
 music21 = "*"
+scikit-image = "*"
+omrdatasettools = "*"
 
 [dev-packages]
 
