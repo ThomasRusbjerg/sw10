@@ -12,6 +12,8 @@ muscima = "*"
 music21 = "*"
 scikit-image = "*"
 omrdatasettools = "*"
+pyyaml = "*"
+sklearn = "*"
 
 [dev-packages]
 
