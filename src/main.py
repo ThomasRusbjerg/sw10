@@ -5,7 +5,8 @@ from dataset_splitter import DatasetSplitter
 def main():
     images_root = "data/MUSCIMA++/v2.0/data/images"
     mung_root = "data/MUSCIMA++/v2.0/data/annotations"
-    split_file = "src/test_split.yaml"
+
+    split_file = "data/training_validation_test/training.txt"
     split = data_util.load_split(split_file)
 
     # Load the (full) images and corresponding annotations
