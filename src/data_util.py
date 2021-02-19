@@ -44,11 +44,11 @@ def __load_image(filename: str) -> np.ndarray:
 
 
 # source: https://github.com/OMR-Research/MungLinker
-def load_munglinker_data(mung_root: str, images_root: str,
-                         include_names: List[str] = None,
-                         max_items: int = None,
-                         exclude_classes=None,
-                         masks_to_bounding_boxes=False):
+def load_mungs_images(mung_root: str, images_root: str,
+                      include_names: List[str] = None,
+                      max_items: int = None,
+                      exclude_classes=None,
+                      masks_to_bounding_boxes=False):
     """Loads the MuNGs and corresponding images from the given folders.
     All *.xml files in ``mung_root`` are considered MuNG files, all *.png
     files in ``images_root`` are considered image files.
