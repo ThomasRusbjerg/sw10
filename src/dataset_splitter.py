@@ -45,12 +45,18 @@ class DatasetSplitter:
         :return: A triple of three list, containing indices of the training, validation and test sets
         """
         random.seed(seed)
+        # Load the file names in "independent_set" as a numpy array
         test_set_names = np.genfromtxt(self.independent_set, dtype=str, delimiter="\n")
+        # Use regular expression to get writer id and page id from the file
+        # names, e.g. "CVC-MUSCIMA_W-12_N-04_D-ideal" gives [12,4]
         image_name_regex = re.compile(r".*W-(?P<writer>\d+)_N-(?P<page>\d+).*")
         test_set_writer_page = [image_name_regex.match(x) for x in test_set_names]
         test_set_writer_page = [[int(x.group("writer")), int(x.group("page"))]
                                 for x in test_set_writer_page]
+        # Get all of the image file names from the dataset
         names = os.listdir(self.source_directory)
+        # Go through each image file name and check if they should be part of
+        # the training or test set.
         test_set_indices = []
         training_set_indices = []
         for i, name in enumerate(names):
@@ -61,6 +67,7 @@ class DatasetSplitter:
                 test_set_indices.append(i)
             else:
                 training_set_indices.append(i)
+
         training_set_indices, validation_set_indices = \
             train_test_split(training_set_indices, test_size=validation_percentage)
         return training_set_indices, validation_set_indices, test_set_indices
@@ -98,7 +105,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--source_directory",
         type=str,
-        default="data/muscima_pp/v2.0/data/images",
+        default="data/MUSCIMA++/v2.0/data/images",
         help="The directory, where the images should be copied from")
     parser.add_argument(
         "--destination_directory",
@@ -109,7 +116,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--independent_set",
         type=str,
-        default="data/muscima_pp/v2.0/specifications/testset-independent.txt",
+        default="data/MUSCIMA++/v2.0/specifications/testset-independent.txt",
         help="text file with independent writer set")
 
     flags, unparsed = parser.parse_known_args()

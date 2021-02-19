@@ -10,7 +10,7 @@ from mung.io import read_nodes_from_file
 from mung.graph import NotationGraph
 from mung.node import Node, bounding_box_intersection
 from tqdm import tqdm
-import yaml
+
 
 
 def get_muscima_pp_v2():
@@ -20,10 +20,9 @@ def get_muscima_pp_v2():
     downloader.download_and_extract_dataset(OmrDataset.MuscimaPlusPlus_V2, "data/MUSCIMA++")
 
 
-# Load train/validation/test split from yaml file
+# Load train/validation/test split from file
 def load_split(split_file):
-    with open(split_file, 'rb') as hdl:
-        split = yaml.load(hdl, Loader=yaml.BaseLoader)
+    split = np.genfromtxt(split_file, dtype=str, delimiter="\n")
     return split
 
 
