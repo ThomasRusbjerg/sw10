@@ -11,10 +11,15 @@ tqdm = "*"
 muscima = "*"
 music21 = "*"
 omrdatasettools = "*"
+<<<<<<< HEAD
 google-cloud-storage = "*"
 cloudml-hypertune = "==0.1.0.dev6"
 tensorflow = "*"
 matplotlib = "*"
+=======
+pyyaml = "*"
+sklearn = "*"
+>>>>>>> origin/develop
 
 [dev-packages]
 
