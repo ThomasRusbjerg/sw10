@@ -12,7 +12,7 @@ IMAGE_URI = eu.gcr.io/$(PROJECT_ID)/$(IMAGE_NAME):$(IMAGE_TAG)
 # variables for AI platform job
 BUCKET_NAME = sw10
 PROJECT_NAME = omr
-JOB_DIR = model/$(timestamp)
+JOB_DIR = jobs/$(timestamp)
 REGION = europe-west1
 # job names must only have letters, numbers, and underscores
 JOB_NAME=$(shell echo "$(curdir)-$(timestamp)" | sed -e 's/-/_/g')
@@ -70,6 +70,12 @@ endif
 ## freeze: freeze Pipfile.lock dependencies to requirements.txt, only used for building the docker image
 freeze:
 	pipenv lock --keep-outdated --requirements > requirements.txt
+
+.PHONY: tensorboard
+## tensorboard: tensorboard starts a tensorboard instance on localhost:6006
+tensorboard:
+	xdg-open http://localhost:6006 && \
+	pipenv run tensorboard --logdir "gs://sw10/omr/jobs"
 
 .PHONY: help
 ## help: prints this help message

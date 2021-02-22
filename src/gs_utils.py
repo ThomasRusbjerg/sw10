@@ -16,7 +16,7 @@ def upload_blob(upload_dir, file_name):
     bucket = client.bucket(path[0])
 
     dest = os.path.join(path[1], file_name)
-    print(dest, file_name, upload_dir)
+
     blob = bucket.blob(dest)
     blob.upload_from_filename(filename=file_name)
 

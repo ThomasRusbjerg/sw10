@@ -15,7 +15,9 @@ def _parse_args(argv):
     parser.add_argument(
         '--job-dir',
         help='Output directory for exporting model and other metadata.',
-        required=False
+        required=False,
+        # type=str,
+        # default="gs://sw10/omr/model/local"
     )
 
     parser.add_argument(
@@ -53,7 +55,9 @@ def dummy_model(x_train, y_train, input_shape, num_classes, flags):
 
     model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
 
-    history = model.fit(x_train, y_train, batch_size=flags.batch_size, epochs=flags.epochs, validation_split=0.1)
+    callbacks = [tf.keras.callbacks.TensorBoard(log_dir=flags.job_dir + "/logs")]
+
+    history = model.fit(x_train, y_train, batch_size=flags.batch_size, epochs=flags.epochs, validation_split=0.1, callbacks=callbacks)
     return model, history
 
 
@@ -96,7 +100,6 @@ def main():
     score = model.evaluate(x_test, y_test, verbose=0)
     print("Test loss:", score[0])
     print("Test accuracy:", score[1])
-
     # save the model
     modelname = 'model.h5'
     model.save(modelname)
