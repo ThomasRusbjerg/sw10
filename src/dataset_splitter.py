@@ -20,16 +20,22 @@ class DatasetSplitter:
                  destination_directory: str,
                  independent_set: str):
         """
-        :param source_directory: The root directory, where all images currently reside.
-        :param destination_directory: The root directory, into which the data will be placed.
-            Inside of this directory, the following structure will be created:
 
-         destination_directory
-         |- training
-         |
-         |- validation
-         |
-         |- test
+        Parameters
+        ----------
+        source_directory
+            The root directory, where all images currently reside.
+        destination_directory
+            The root directory, into which the data will be placed.
+            Inside of this directory, the following structure will be created:
+                 |- training
+                 |
+                 |- validation
+                 |
+                 |- test
+        independent_set
+            List of files to be in the test set to comply with independent
+            writers split
 
         """
         self.source_directory = source_directory
@@ -39,11 +45,22 @@ class DatasetSplitter:
     def get_independent_training_validation_and_test_sample_indices(
             self, validation_percentage=0.16, seed: int = 0) -> (
             List[int], List[int], List[int]):
+        """ Returns a reproducible set of sample indices from the entire
+            dataset population following independent writer splitting
+
+        Parameters
+        ----------
+        validation_percentage
+            the percentage of the entire population size that should be used
+            for validation
+        seed
+            seed for the (semi)random split
+
+        Returns
+        -------
+        A triple of three list, containing indices of the training, validation and test sets
         """
-        Returns a reproducible set of sample indices from the entire dataset population following independent writer splitting
-        :param validation_percentage: the percentage of the entire population size that should be used for validation
-        :return: A triple of three list, containing indices of the training, validation and test sets
-        """
+
         random.seed(seed)
         # Load the file names in "independent_set" as a numpy array
         test_set_names = np.genfromtxt(self.independent_set, dtype=str, delimiter="\n")

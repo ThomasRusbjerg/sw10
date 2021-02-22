@@ -20,9 +20,21 @@ def get_muscima_pp_v2():
     downloader.download_and_extract_dataset(OmrDataset.MuscimaPlusPlus_V2, "data/MUSCIMA++")
 
 
-# Load train/validation/test split from file
-def load_split(split_file):
-    split = np.genfromtxt(split_file, dtype=str, delimiter="\n")
+def load_split(split_file_path: str) -> np.ndarray:
+    """ Load train/validation/test split from file
+
+    Parameters
+    ----------
+    split_file_path
+        path to the file containing which files to include in the split
+
+    Returns
+    -------
+    numpy.ndarray
+        contents of the split-file, line by line
+
+    """
+    split = np.genfromtxt(split_file_path, dtype=str, delimiter="\n")
     return split
 
 
@@ -44,37 +56,49 @@ def __load_image(filename: str) -> np.ndarray:
 
 # source: https://github.com/OMR-Research/MungLinker
 def load_mungs_images(mung_root: str, images_root: str,
-                      include_names: List[str] = None,
+                      include_names: np.ndarray = None,
                       max_items: int = None,
                       exclude_classes=None,
                       masks_to_bounding_boxes=False):
-    """Loads the MuNGs and corresponding images from the given folders.
+    """ Loads the MuNGs and corresponding images from the given folders.
     All *.xml files in ``mung_root`` are considered MuNG files, all *.png
     files in ``images_root`` are considered image files.
 
     Use this to get data for initializing the PairwiseMungoDataPool.
 
-    :param mung_root: Directory containing MuNG XML files.
 
-    :param images_root: Directory containing underlying image files (png).
+    Parameters
+    ----------
+    mung_root
+        Directory containing MuNG XML files.
 
-    :param include_names: Only load files such that their basename is in
+    images_root
+        Directory containing underlying image files (png).
+
+    include_names
+        Only load files such that their basename is in
         this list. Useful for loading train/test/validate splits.
 
-    :param max_items: Load at most this many files.
+    max_items
+        Load at most this many files.
 
-    :param exclude_classes: When loading the MuNG, exclude notation objects
+    exclude_classes
+        When loading the MuNG, exclude notation objects
         that are labeled as one of these classes. (Most useful for excluding
         staff objects.)
 
-    :param masks_to_bounding_boxes: If set, will replace the masks of the
+    masks_to_bounding_boxes
+        If set, will replace the masks of the
         loaded MuNGOs with everything in the corresponding bounding box
         of the image. This is to make the training data compatible with
         the runtime outputs of RCNN-based detectors, which only output
         the bounding box, not the mask.
 
-    :returns: mungs, images  -- a tuple of lists.
+    Returns
+    -------
+        mungs, images  -- a tuple of lists.
     """
+
     if exclude_classes is None:
         exclude_classes = {}
 
