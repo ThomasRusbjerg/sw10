@@ -12,6 +12,5 @@ do
     esac
 done
 
-# Run job within pipenv to ensure all dependencies are there
 echo "Running training job: ${FILE} with Arguments: $@ \n"
 exec "python3" "${FILE}" "$@"

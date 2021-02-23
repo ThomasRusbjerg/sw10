@@ -15,6 +15,7 @@ google-cloud-storage = "*"
 cloudml-hypertune = "==0.1.0.dev6"
 tensorflow = "*"
 matplotlib = "*"
+sklearn = "*"
 
 [dev-packages]
 
