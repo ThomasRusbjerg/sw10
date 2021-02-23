@@ -5,6 +5,7 @@ import hypertune
 import tensorflow as tf
 import numpy as np
 from tensorflow import keras
+from datetime import date, datetime
 
 import gs_utils
 
@@ -16,8 +17,8 @@ def _parse_args(argv):
         '--job-dir',
         help='Output directory for exporting model and other metadata.',
         required=False,
-        # type=str,
-        # default="gs://sw10/omr/model/local"
+        type=str,
+        default="gs://sw10/omr/jobs/" + date.today().strftime("%Y%m%d") + "-" + datetime.now().strftime("%H%M%S") + "/1"
     )
 
     parser.add_argument(
