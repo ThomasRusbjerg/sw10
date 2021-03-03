@@ -1,6 +1,5 @@
-"""Module for manipulating the data"""
+"""Module for loading MUSCIMA++ data"""
 
-from omrdatasettools import Downloader, OmrDataset
 from glob import glob
 from typing import List, Tuple, Dict
 from PIL import Image
@@ -10,14 +9,6 @@ from mung.io import read_nodes_from_file
 from mung.graph import NotationGraph
 from mung.node import Node, bounding_box_intersection
 from tqdm import tqdm
-
-
-
-def get_muscima_pp_v2():
-    """ Downloads the complete MUSCIMA++ dataset and saves it in "/data/MUSCIMA++"
-    """
-    downloader = Downloader()
-    downloader.download_and_extract_dataset(OmrDataset.MuscimaPlusPlus_V2, "data/MUSCIMA++")
 
 
 def load_split(split_file_path: str) -> np.ndarray:
