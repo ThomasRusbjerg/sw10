@@ -15,7 +15,7 @@ from tqdm import tqdm
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_dir", default="data/MUSCIMA++/v2.0/data/annotations/")
-    parser.add_argument("--mapping_output_path", default="data/MUSCIMA++/mapping_all_classes.pbtxt")
+    parser.add_argument("--mapping_output_path", default="data/MUSCIMA++/mapping_all_classes.txt")
     parser.add_argument("--remove_line_shaped_or_construct", type=bool, default=False)
     args = parser.parse_args()
 

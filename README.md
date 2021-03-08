@@ -1,6 +1,9 @@
 # Software 10: Optical Music Recognition
 
 ## Training a model with the TF Object Detection API
+Consider reading the official [Object Detection API tutorial](https://tensorflow-object-detection-api-tutorial.readthedocs.io/en/latest/training.html)
+for a general guide to the API.
+The guide below is specific to this project.
 ### Installation
 Install the required packages from the Pipfile.
 
@@ -55,11 +58,13 @@ Finally, the TensorFlow record files for training, validation, and testing can
 be generated from the Pascal VOC xml files and the label mapping:
 
 ```bash
-python src/data_handling/generate_tfrecord.py -x data/full_page_annotations/training/ -l data/MUSCIMA++/mapping_all_classes.pbtxt -o data/MUSCIMA++/full_page_annotations/train.record
-python src/data_handling/generate_tfrecord.py -x data/full_page_annotations/validation/ -l data/MUSCIMA++/mapping_all_classes.pbtxt -o data/MUSCIMA++/full_page_annotations/validation.record
-python src/data_handling/generate_tfrecord.py -x data/full_page_annotations/test/ -l data/MUSCIMA++/mapping_all_classes.pbtxt -o data/MUSCIMA++/full_page_annotations/test.record
+python src/data_handling/generate_tfrecord.py -x data/full_page_annotations/training/ -l data/MUSCIMA++/mapping_all_classes.txt -o data/MUSCIMA++/full_page_annotations/train.record
+python src/data_handling/generate_tfrecord.py -x data/full_page_annotations/validation/ -l data/MUSCIMA++/mapping_all_classes.txt -o data/MUSCIMA++/full_page_annotations/validation.record
+python src/data_handling/generate_tfrecord.py -x data/full_page_annotations/test/ -l data/MUSCIMA++/mapping_all_classes.txt -o data/MUSCIMA++/full_page_annotations/test.record
 ```
 
 ### Training
 
+Download a pre-trained model.
 
+faster_rcnn_inception_resnet_v2_atrous_coco
