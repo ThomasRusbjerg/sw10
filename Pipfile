@@ -13,9 +13,11 @@ music21 = "*"
 omrdatasettools = "*"
 google-cloud-storage = "*"
 cloudml-hypertune = "==0.1.0.dev6"
-tensorflow = "*"
 matplotlib = "*"
 sklearn = "*"
+tensorflow = "~=2.2.0"
+pycocotools = "*"
+object-detection = "*"
 
 [dev-packages]
 

@@ -127,7 +127,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--destination_directory",
         type=str,
-        default="data/training_validation_test",
+        default="data/MUSCIMA++/training_validation_test",
         help="The directory, where the images should be split into the three directories 'train', 'test' and "
              "'validation'")
     parser.add_argument(

@@ -1,3 +1,4 @@
+# source: https://github.com/OMR-Research/MungLinker
 """Module for loading MUSCIMA++ data"""
 
 from glob import glob
@@ -29,7 +30,6 @@ def load_split(split_file_path: str) -> np.ndarray:
     return split
 
 
-# source: https://github.com/OMR-Research/MungLinker
 def __load_mung(filename: str, exclude_classes: List[str]) -> NotationGraph:
     mungos = read_nodes_from_file(filename)
     mung = NotationGraph(mungos)
@@ -39,13 +39,11 @@ def __load_mung(filename: str, exclude_classes: List[str]) -> NotationGraph:
     return mung
 
 
-# source: https://github.com/OMR-Research/MungLinker
 def __load_image(filename: str) -> np.ndarray:
     image = np.array(Image.open(filename).convert('1')).astype('uint8')
     return image
 
 
-# source: https://github.com/OMR-Research/MungLinker
 def load_mungs_images(mung_root: str, images_root: str,
                       include_names: np.ndarray = None,
                       max_items: int = None,
