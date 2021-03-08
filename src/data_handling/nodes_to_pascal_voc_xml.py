@@ -1,13 +1,11 @@
 # Source: https://github.com/apacha/MusicObjectDetector-TF
 
 import os
-from itertools import groupby
 from lxml import etree
 from typing import List, Tuple
 
 from lxml.etree import Element, SubElement
 from mung.node import Node
-from muscima.cropobject import CropObject
 
 
 def create_annotations_in_pascal_voc_format_from_nodes(annotations_folder: str,

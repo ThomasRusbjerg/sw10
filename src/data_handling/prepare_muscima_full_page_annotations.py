@@ -9,7 +9,7 @@ from tqdm import tqdm
 from mung.io import read_nodes_from_file
 
 
-from muscima_annotation_generator import create_annotations_in_pascal_voc_format_from_nodes
+from nodes_to_pascal_voc_xml import create_annotations_in_pascal_voc_format_from_nodes
 
 
 def prepare_annotations(muscima_pp_dataset_directory: str,
@@ -49,4 +49,4 @@ def prepare_annotations(muscima_pp_dataset_directory: str,
 
 if __name__ == "__main__":
     muscima_pp_dataset_directory = os.path.join("data", "MUSCIMA++")
-    prepare_annotations(muscima_pp_dataset_directory, "data/Full_Page_Annotations.csv", "data/MUSCIMA++/Full_Page_Annotations")
+    prepare_annotations(muscima_pp_dataset_directory, "data/full_page_annotations.csv", "data/MUSCIMA++/full_page_annotations/annotations")

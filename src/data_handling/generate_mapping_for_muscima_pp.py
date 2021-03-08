@@ -1,3 +1,8 @@
+# Source: https://github.com/apacha/MusicObjectDetector-TF
+
+""" Generates a label map of the classes in the MUSCIMA++ dataset, which is
+    required for using the TF Object Detection API. """
+
 import os
 import muscima.io
 import glob

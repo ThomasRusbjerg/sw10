@@ -1,12 +1,14 @@
+# Source: https://tensorflow-object-detection-api-tutorial.readthedocs.io/en/latest/training.html
+
 """ Sample TensorFlow XML-to-TFRecord converter
 
 usage: generate_tfrecord.py [-h] [-x XML_DIR] [-l LABELS_PATH] [-o OUTPUT_PATH] [-i IMAGE_DIR] [-c CSV_PATH]
 
 Running with MUSCIMA++ and our file path setup:
 Training:
-python src/data_handling/generate_tfrecord.py -x data/Full_Page_Annotations/training_validation_test/training/ -l data/MUSCIMA++/mapping_all_classes.pbtxt -o data/MUSCIMA++/Full_Page_Annotations/train.record
+python src/data_handling/generate_tfrecord.py -x data/full_page_annotations/training_validation_test/training/ -l data/MUSCIMA++/mapping_all_classes.pbtxt -o data/MUSCIMA++/full_page_annotations/train.record
 Testing:
-python src/data_handling/generate_tfrecord.py -x data/Full_Page_Annotations/training_validation_test/testing -l data/MUSCIMA++/mapping_all_classes.pbtxt -o data/MUSCIMA++/Full_Page_Annotations/test.record
+python src/data_handling/generate_tfrecord.py -x data/full_page_annotations/training_validation_test/testing -l data/MUSCIMA++/mapping_all_classes.pbtxt -o data/MUSCIMA++/full_page_annotations/test.record
 
 
 

@@ -18,6 +18,7 @@ sklearn = "*"
 tensorflow = "~=2.2.0"
 pycocotools = "*"
 object-detection = "*"
+protobuf = "*"
 
 [dev-packages]
 
