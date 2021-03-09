@@ -1,4 +1,5 @@
 from omrdatasettools import Downloader, OmrDataset
+import os
 
 
 def download_muscima_pp_v2():
@@ -6,6 +7,12 @@ def download_muscima_pp_v2():
     """
     downloader = Downloader()
     downloader.download_and_extract_dataset(OmrDataset.MuscimaPlusPlus_V2, "data/MUSCIMA++")
+
+    # Clean up downloaded zip files
+    if os.path.exists("CVC_MUSCIMA_PP_Annotated-Images.zip"):
+        os.remove("CVC_MUSCIMA_PP_Annotated-Images.zip")
+    if os.path.exists("MUSCIMA-pp_v2.0.zip"):
+        os.remove("MUSCIMA-pp_v2.0.zip")
 
 
 if __name__ == "__main__":
