@@ -49,4 +49,4 @@ def prepare_annotations(muscima_pp_dataset_directory: str,
 
 if __name__ == "__main__":
     muscima_pp_dataset_directory = os.path.join("data", "MUSCIMA++")
-    prepare_annotations(muscima_pp_dataset_directory, "data/full_page_annotations.csv", "data/MUSCIMA++/full_page_annotations/annotations")
+    prepare_annotations(muscima_pp_dataset_directory, "data/full_page_annotations.csv", "data/MUSCIMA++/full_page/annotations")

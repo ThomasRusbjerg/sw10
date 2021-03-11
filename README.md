@@ -45,7 +45,7 @@ python src/data_handling/prepare_muscima_full_page_annotations.py
 Split the data into train, validation, and test:
 
 ```bash
-python src/data_handling/dataset_splitter.py --source_directory=data/MUSCIMA++/full_page_annotations/annotations --destination_directory=data/MUSCIMA++/full_page_annotations/
+python src/data_handling/dataset_splitter.py --source_directory=data/MUSCIMA++/v2.0/data/images --destination_directory=data/MUSCIMA++/full_page
 ```
 
 The Object Detection API requires a mapping of class label names to id's, which can
@@ -59,9 +59,9 @@ Finally, the TensorFlow record files for training, validation, and testing can
 be generated from the Pascal VOC xml files and the label mapping:
 
 ```bash
-python src/data_handling/generate_tfrecord.py -x data/full_page_annotations/training/ -l data/MUSCIMA++/mapping_all_classes.txt -o data/MUSCIMA++/full_page_annotations/train.record
-python src/data_handling/generate_tfrecord.py -x data/full_page_annotations/validation/ -l data/MUSCIMA++/mapping_all_classes.txt -o data/MUSCIMA++/full_page_annotations/validation.record
-python src/data_handling/generate_tfrecord.py -x data/full_page_annotations/test/ -l data/MUSCIMA++/mapping_all_classes.txt -o data/MUSCIMA++/full_page_annotations/test.record
+python src/data_handling/create_muscima_tf_record.py --data_dir=data/MUSCIMA++/full_page/ --set=training --annotations_dir=annotations --output_path=data/MUSCIMA++/full_page/train.record --label_map_path=data/MUSCIMA++/mapping_all_classes.pbtxt
+python src/data_handling/create_muscima_tf_record.py --data_dir=data/MUSCIMA++/full_page/ --set=validation --annotations_dir=annotations --output_path=data/MUSCIMA++/full_page/validation.record --label_map_path=data/MUSCIMA++/mapping_all_classes.pbtxt
+python src/data_handling/create_muscima_tf_record.py --data_dir=data/MUSCIMA++/full_page/ --set=test --annotations_dir=annotations --output_path=data/MUSCIMA++/full_page/test.record --label_map_path=data/MUSCIMA++/mapping_all_classes.pbtxt
 ```
 
 ### Training
