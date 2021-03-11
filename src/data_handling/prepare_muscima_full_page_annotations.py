@@ -2,6 +2,7 @@
 
 import os
 import shutil
+import argparse
 from glob import glob
 
 from PIL import Image
@@ -48,5 +49,20 @@ def prepare_annotations(muscima_pp_dataset_directory: str,
 
 
 if __name__ == "__main__":
-    muscima_pp_dataset_directory = os.path.join("data", "MUSCIMA++")
-    prepare_annotations(muscima_pp_dataset_directory, "data/full_page_annotations.csv", "data/MUSCIMA++/full_page/annotations")
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--data_dir",
+        type=str,
+        default="data/MUSCIMA++",
+        help="The directory where MUSCIMA++ is located")
+    parser.add_argument(
+        "--destination_dir",
+        type=str,
+        default="data/MUSCIMA++/full_page/annotations",
+        help="The directory where the Pascal VOC XML files should be placed")
+
+    flags, unparsed = parser.parse_known_args()
+
+    prepare_annotations(flags.data_dir,
+                        "data/full_page_annotations.csv",
+                        flags.destination_dir)

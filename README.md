@@ -46,13 +46,13 @@ Run the following command to generate Pascal VOC xml files from the annotations
 (currently only supports full-page training):
 
 ```bash
-python src/data_handling/prepare_muscima_full_page_annotations.py
+python src/data_handling/prepare_muscima_full_page_annotations.py --destination_dir=obj_det_api_training/data/MUSCIMA++/full_page/annotations
 ```
 
 Split the data into train, validation, and test:
 
 ```bash
-python src/data_handling/dataset_splitter.py --source_directory=data/MUSCIMA++/v2.0/data/images --destination_directory=data/MUSCIMA++/full_page
+python src/data_handling/dataset_splitter.py --source_directory=data/MUSCIMA++/v2.0/data/images --destination_directory=obj_det_api_training/data/MUSCIMA++/full_page
 ```
 
 The Object Detection API requires a mapping of class label names to id's, which can
@@ -66,15 +66,15 @@ Finally, the TensorFlow record files for training, validation, and testing can
 be generated from the Pascal VOC xml files and the label mapping:
 
 ```bash
-python src/data_handling/create_muscima_tf_record.py --data_dir=data/MUSCIMA++/full_page/ --set=training --annotations_dir=annotations --output_path=data/MUSCIMA++/full_page/train.record --label_map_path=data/MUSCIMA++/mapping_all_classes.pbtxt
-python src/data_handling/create_muscima_tf_record.py --data_dir=data/MUSCIMA++/full_page/ --set=validation --annotations_dir=annotations --output_path=data/MUSCIMA++/full_page/validation.record --label_map_path=data/MUSCIMA++/mapping_all_classes.pbtxt
-python src/data_handling/create_muscima_tf_record.py --data_dir=data/MUSCIMA++/full_page/ --set=test --annotations_dir=annotations --output_path=data/MUSCIMA++/full_page/test.record --label_map_path=data/MUSCIMA++/mapping_all_classes.pbtxt
+python src/data_handling/create_muscima_tf_record.py --data_dir=obj_det_api_training/data/MUSCIMA++/full_page/ --set=training --annotations_dir=annotations --output_path=obj_det_api_training/data/MUSCIMA++/full_page/train.record --label_map_path=obj_det_api_training/data/MUSCIMA++/mapping_all_classes.pbtxt
+python src/data_handling/create_muscima_tf_record.py --data_dir=obj_det_api_training/data/MUSCIMA++/full_page/ --set=validation --annotations_dir=annotations --output_path=obj_det_api_training/data/MUSCIMA++/full_page/validation.record --label_map_path=obj_det_api_training/data/MUSCIMA++/mapping_all_classes.pbtxt
+python src/data_handling/create_muscima_tf_record.py --data_dir=obj_det_api_training/data/MUSCIMA++/full_page/ --set=test --annotations_dir=annotations --output_path=obj_det_api_training/data/MUSCIMA++/full_page/test.record --label_map_path=obj_det_api_training/data/MUSCIMA++/mapping_all_classes.pbtxt
 ```
 
 ### Training
 
 Download a pre-trained model from the [TF2 Detection Model Zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md)
-and extract the model folder to `sw10/object_detection_api_training/pre_trained_models/`
+and extract the model folder to `sw10/obj_det_api_training/pre_trained_models/`
 
 The models we currently have customised pipeline.config files for:
 - SSD ResNet152 V1 FPN 1024x1024 (RetinaNet152)
@@ -86,13 +86,13 @@ If you download a pre-trained model which is not listed above, follow
 [this guide](https://tensorflow-object-detection-api-tutorial.readthedocs.io/en/latest/training.html)
 under the "Configure The Training Pipeline" section to set up the
 `pipeline.config` file for the model, and place it in
-`object_detection_api_training/models/[MODEL_NAME]/`.
+`obj_det_api_training/models/[MODEL_NAME]/`.
 
 To begin training, insert the correct folder names into the following command
 and run it:
 
 ```bash
-python src/run_model_w_obj_det_api.py --model_dir=object_detection_api_training/models/[MODEL FOLDER] --pipeline_config_path=object_detection_api_training/models/[MODEL FOLDER]/pipeline.config
+python src/run_model_w_obj_det_api.py --model_dir=obj_det_api_training/models/[MODEL FOLDER] --pipeline_config_path=obj_det_api_training/models/[MODEL FOLDER]/pipeline.config
 ```
 
 If it fails because a module could not be found, run 
@@ -105,7 +105,7 @@ To evaluate a model (during or after training), insert the correct folder names
 into the following command and run it:
 
 ```bash
-python src/run_model_w_obj_det_api.py --model_dir=object_detection_api_training/models/[MODEL FOLDER] --pipeline_config_path=object_detection_api_training/models/[MODEL FOLDER]/pipeline.config --checkpoint_dir=object_detection_api_training/models/[MODEL FOLDER]
+python src/run_model_w_obj_det_api.py --model_dir=obj_det_api_training/models/[MODEL FOLDER] --pipeline_config_path=obj_det_api_training/models/[MODEL FOLDER]/pipeline.config --checkpoint_dir=obj_det_api_training/models/[MODEL FOLDER]
 ```
 
 The model is evaluated using the specified metric in the pipeline.config file. 
@@ -113,11 +113,11 @@ The latest checkpoint of the model is used for evaluation, and the evaluation
 process will check every 300 seconds for a new checkpoint to use.
 
 The results are stored in TF event files at
-`object_detection_api_training/models[MODEL FOLDER]/eval_0`.
+`obj_det_api_training/models[MODEL FOLDER]/eval_0`.
 These results can be monitored using TensorBoard by setting logdir to
-`object_detection_api_training/models/[MODEL_NAME]`.
+`obj_det_api_training/models/[MODEL_NAME]`.
 
 For example: 
 ```bash
-tensorboard --logdir=object_detection_api_training/models/custom_ssd_mobilenet/
+tensorboard --logdir=obj_det_api_training/models/custom_ssd_mobilenet/
 ```
