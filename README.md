@@ -33,6 +33,16 @@ export PYTHONPATH=$PYTHONPATH:`pwd`:`pwd`/slim
 This last step has to be repeated each time you wish to use code from the
 Object Detection API in a new session.
 
+Finally, install the Object Detection API:
+
+```bash
+# From models/research/
+cp object_detection/packages/tf2/setup.py .
+pip install -e .
+# From models/research/slim
+pip install -e .
+```
+
 ### Data retrieval and preprocessing
 To get the MUSCIMA++ dataset, run 
 
