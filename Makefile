@@ -10,7 +10,7 @@ IMAGE_TAG = $(whoami)
 IMAGE_URI = eu.gcr.io/$(PROJECT_ID)/$(IMAGE_NAME):$(IMAGE_TAG)
 
 # variables for AI platform job
-BUCKET_NAME = sw10
+BUCKET_NAME = sw10-bucket
 PROJECT_NAME = omr
 JOB_DIR = jobs/$(timestamp)
 REGION = europe-west1
@@ -75,7 +75,7 @@ freeze:
 ## tensorboard: tensorboard starts a tensorboard instance on localhost:6006
 tensorboard:
 	xdg-open http://localhost:6006 && \
-	pipenv run tensorboard --logdir "gs://sw10/omr/jobs"
+	pipenv run tensorboard --logdir "gs://sw10-bucket/omr/jobs"
 
 .PHONY: help
 ## help: prints this help message
