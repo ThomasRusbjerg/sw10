@@ -35,7 +35,7 @@ ifeq ($(FILE),)
 endif
 
 	$(MAKE) build
-	docker run -it --rm $(IMAGE_URI) --file=$(FILE)
+	docker run -it --rm --gpus 'all,"capabilities=compute,utility"' $(IMAGE_URI) --file=$(FILE)
 
 # if this do not work run: gcloud auth configure-docker
 .PHONY: push

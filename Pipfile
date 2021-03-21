@@ -16,6 +16,9 @@ cloudml-hypertune = "==0.1.0.dev6"
 tensorflow = "*"
 matplotlib = "*"
 sklearn = "*"
+imgaug = "*"
+ipython = "==7.12"
+scikit-image = "==0.17.2"
 
 [dev-packages]
 
