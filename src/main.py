@@ -40,7 +40,6 @@ def train(model, training_data, validation_data, config):
                 layers='all')
 
 
-
 def main():
     training_split_file_path = "data/training_validation_test/training.txt"
     val_split_file_path = "data/training_validation_test/validation.txt"

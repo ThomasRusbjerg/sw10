@@ -18,7 +18,7 @@ from collections import OrderedDict
 
 from models.backbones.utils import compute_backbone_shapes
 from models.backbones.resnet import resnet_graph
-from models.data_generator import data_generator, unmold_mask, resize_image
+from models.data_generator import DataGenerator, unmold_mask, resize_image
 from models.rcnn.rpn import build_rpn_model
 from models.rcnn.layers.proposal import ProposalLayer
 from models.rcnn.layers.detection import DetectionLayer
@@ -76,7 +76,7 @@ def log(text, array=None):
     print(text)
 
 
-class MaskRCNN:
+class MaskRCNN(object):
     """Encapsulates the Mask RCNN model functionality.
     The actual Keras model is in the keras_model property.
     """
@@ -465,29 +465,24 @@ class MaskRCNN:
 
         if h5py is None:
             raise ImportError("`load_weights` requires h5py.")
-        f = h5py.File(filepath, mode="r")
-        if "layer_names" not in f.attrs and "model_weights" in f:
-            f = f["model_weights"]
+        with h5py.File(filepath, mode='r') as f:
+            if 'layer_names' not in f.attrs and 'model_weights' in f:
+                f = f['model_weights']
 
-        # In multi-GPU training, we wrap the model. Get layers
-        # of the inner model because they have the weights.
-        keras_model = self.keras_model
-        layers = (
-            keras_model.inner_model.layers
-            if hasattr(keras_model, "inner_model")
-            else keras_model.layers
-        )
+            # In multi-GPU training, we wrap the model. Get layers
+            # of the inner model because they have the weights.
+            keras_model = self.keras_model
+            layers = keras_model.inner_model.layers if hasattr(keras_model, "inner_model")\
+                else keras_model.layers
 
-        # Exclude some layers
-        if exclude:
-            layers = filter(lambda l: l.name not in exclude, layers)
+            # Exclude some layers
+            if exclude:
+                layers = filter(lambda l: l.name not in exclude, layers)
 
-        if by_name:
-            hdf5_format.load_weights_from_hdf5_group_by_name(f, layers)
-        else:
-            hdf5_format.load_weights_from_hdf5_group(f, layers)
-        if hasattr(f, "close"):
-            f.close()
+            if by_name:
+                hdf5_format.load_weights_from_hdf5_group_by_name(f, layers)
+            else:
+                hdf5_format.load_weights_from_hdf5_group(f, layers)
 
         # Update the log directory
         self.set_log_dir(filepath)
@@ -557,7 +552,7 @@ class MaskRCNN:
         # Skip gamma and beta weights of batch normalization layers.
         reg_losses = [
             tf.keras.regularizers.l2(self.config.WEIGHT_DECAY)(w)
-            / tf.cast(tf.size(w), tf.float32)
+            / tf.cast(tf.size(input=w), tf.float32)
             for w in self.keras_model.trainable_weights
             if "gamma" not in w.name and "beta" not in w.name
         ]
@@ -575,9 +570,9 @@ class MaskRCNN:
             layer = self.keras_model.get_layer(name)
             self.keras_model.metrics_names.append(name)
             loss = tf.reduce_mean(
-                layer.output, keepdims=True
+                input_tensor=layer.output, keepdims=True
             ) * self.config.LOSS_WEIGHTS.get(name, 1.0)
-            self.keras_model.metrics.append(loss)
+            self.keras_model.add_metric(loss, name=name, aggregation='mean')
 
     def set_trainable(self, layer_regex, keras_model=None, indent=0, verbose=1):
         """Sets model layers as trainable if their names match
@@ -639,7 +634,8 @@ class MaskRCNN:
             # \path\to\logs\coco20171029T2315\mask_rcnn_coco_0001.h5 (Windows)
             # /path/to/logs/coco20171029T2315/mask_rcnn_coco_0001.h5 (Linux)
             regex = r".*[/\\][\w-]+(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})[/\\]mask\_rcnn\_[\w-]+(\d{4})\.h5"
-            m = re.match(regex, model_path)
+            # Use string for regex since we might want to use pathlib.Path as model_path
+            m = re.match(regex, str(model_path))
             if m:
                 now = datetime.datetime(
                     int(m.group(1)),
@@ -723,17 +719,9 @@ class MaskRCNN:
             layers = layer_regex[layers]
 
         # Data generators
-        train_generator = data_generator(
-            train_dataset,
-            self.config,
-            shuffle=True,
-            augmentation=augmentation,
-            batch_size=self.config.BATCH_SIZE,
-            no_augmentation_sources=no_augmentation_sources,
-        )
-        val_generator = data_generator(
-            val_dataset, self.config, shuffle=True, batch_size=self.config.BATCH_SIZE
-        )
+        train_generator = DataGenerator(train_dataset, self.config, shuffle=True,
+                                         augmentation=augmentation)
+        val_generator = DataGenerator(val_dataset, self.config, shuffle=True)
 
         # Create log_dir if it does not exist
         if not os.path.exists(self.log_dir):
@@ -765,7 +753,7 @@ class MaskRCNN:
         # Work-around for Windows: Keras fails on Windows when using
         # multiprocessing workers. See discussion here:
         # https://github.com/matterport/Mask_RCNN/issues/13#issuecomment-353124009
-        if os.name is "nt":
+        if os.name == "nt":
             workers = 0
         else:
             workers = multiprocessing.cpu_count()
@@ -779,7 +767,7 @@ class MaskRCNN:
             validation_data=val_generator,
             validation_steps=self.config.VALIDATION_STEPS,
             max_queue_size=100,
-            workers=workers,
+            workers=1,
             use_multiprocessing=False,
         )
         self.epoch = max(self.epoch, epochs)

@@ -77,7 +77,11 @@ def fpn_classifier_graph(
     )(shared)
     # Reshape to [batch, num_rois, NUM_CLASSES, (dy, dx, log(dh), log(dw))]
     s = tf.keras.backend.int_shape(x)
-    mrcnn_bbox = tf.keras.layers.Reshape((-1, num_classes, 4), name="mrcnn_bbox")(x)
+    if s[1] is None:
+        mrcnn_bbox = tf.keras.layers.Reshape((-1, num_classes, 4), name="mrcnn_bbox")(x)
+    else:
+        mrcnn_bbox = tf.keras.layers.Reshape((s[1], num_classes, 4), name="mrcnn_bbox")(x)
+    # mrcnn_bbox = tf.keras.layers.Reshape((-1, num_classes, 4), name="mrcnn_bbox")(x)
     # mrcnn_bbox = KL.Reshape((s[1], num_classes, 4), name="mrcnn_bbox")(x)
 
     return mrcnn_class_logits, mrcnn_probs, mrcnn_bbox

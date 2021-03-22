@@ -7,6 +7,7 @@ Written by Waleed Abdulla
 """
 
 import tensorflow as tf
+from tensorflow.python.eager import context
 import numpy as np
 from models.rcnn.layers.utils import batch_slice, apply_box_deltas_graph, clip_boxes_graph
 
@@ -34,6 +35,13 @@ class ProposalLayer(tf.keras.layers.Layer):
         self.proposal_count = proposal_count
         self.nms_threshold = nms_threshold
 
+    def get_config(self):
+        config = super(ProposalLayer, self).get_config()
+        config["config"] = self.config.to_dict()
+        config["proposal_count"] = self.proposal_count
+        config["nms_threshold"] = self.nms_threshold
+        return config
+
     def call(self, inputs):
         # Box Scores. Use the foreground class confidence. [Batch, num_rois, 1]
         scores = inputs[0][:, :, 1]
@@ -45,7 +53,7 @@ class ProposalLayer(tf.keras.layers.Layer):
 
         # Improve performance by trimming to top anchors by score
         # and doing the rest on the smaller subset.
-        pre_nms_limit = tf.minimum(self.config.PRE_NMS_LIMIT, tf.shape(anchors)[1])
+        pre_nms_limit = tf.minimum(self.config.PRE_NMS_LIMIT, tf.shape(input=anchors)[1])
         ix = tf.nn.top_k(scores, pre_nms_limit, sorted=True, name="top_anchors").indices
         scores = batch_slice(
             [scores, ix], lambda x, y: tf.gather(x, y), self.config.IMAGES_PER_GPU
@@ -94,12 +102,16 @@ class ProposalLayer(tf.keras.layers.Layer):
             )
             proposals = tf.gather(boxes, indices)
             # Pad if needed
-            padding = tf.maximum(self.proposal_count - tf.shape(proposals)[0], 0)
-            proposals = tf.pad(proposals, [(0, padding), (0, 0)])
+            padding = tf.maximum(self.proposal_count - tf.shape(input=proposals)[0], 0)
+            proposals = tf.pad(tensor=proposals, paddings=[(0, padding), (0, 0)])
             return proposals
 
         proposals = batch_slice([boxes, scores], nms, self.config.IMAGES_PER_GPU)
+        if not context.executing_eagerly():
+            # Infer the static output shape:
+            out_shape = self.compute_output_shape(None)
+            proposals.set_shape(out_shape)
         return proposals
 
     def compute_output_shape(self, input_shape):
-        return (None, self.proposal_count, 4)
+        return None, self.proposal_count, 4
