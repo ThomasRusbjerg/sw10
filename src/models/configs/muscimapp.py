@@ -28,22 +28,24 @@ class MuscimaPPConfig(Config):
     # Give the configuration a recognizable name
     NAME = "muscimapp"
 
-    # Adjust down if you use a smaller GPU.
-    IMAGES_PER_GPU = 1
+    BACKBONE = "resnet101"
+
+    MEAN_PIXEL = np.array([120.0, 120.0, 120.0])
+
 
     # Uncomment to train on 8 GPUs (default is 1)
     # GPU_COUNT = 8
 
     # Number of classes (including background)
-    NUM_CLASSES = 1 + 115  # Muscima++ has 107 classes... but not?
+    NUM_CLASSES = 1 + 115  # Muscima++ has 115 classes
 
     USE_MINI_MASK = True
-
     # IMAGE_RESIZE_MODE = "pad64"
     IMAGE_RESIZE_MODE = "square"
     
-    STEPS_PER_EPOCH = 1
-    VALIDATION_STEPS = 1
+    IMAGES_PER_GPU = 2
+    STEPS_PER_EPOCH = 100
+    VALIDATION_STEPS = 20
 
 
 ############################################################

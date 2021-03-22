@@ -10,7 +10,7 @@ IMAGE_TAG = $(whoami)
 IMAGE_URI = eu.gcr.io/$(PROJECT_ID)/$(IMAGE_NAME):$(IMAGE_TAG)
 
 # variables for AI platform job
-BUCKET_NAME = sw10
+BUCKET_NAME = sw10-bucket
 PROJECT_NAME = omr
 JOB_DIR = jobs/$(timestamp)
 REGION = europe-west1

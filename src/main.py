@@ -1,6 +1,8 @@
+import urllib
+import os
 from data_handling import muscima_loader
 from PIL import Image, ImageDraw, ImageFont
-from models.muscimapp import MuscimaPPDataset, MuscimaPPConfig
+from models.configs.muscimapp import MuscimaPPDataset, MuscimaPPConfig
 from models.mask_rcnn import MaskRCNN
 
 def load_data(split_file_path):
@@ -51,6 +53,18 @@ def main():
 
     config = MuscimaPPConfig()
     model = MaskRCNN(mode="training", config=config, model_dir="ayyy")
+
+    weights_folder = "src/models/pretrained_weights/"
+    if not os.path.isdir(weights_folder):
+        os.makedirs(weights_folder)
+    weights_path = weights_folder + "mask_rcnn_coco.h5"
+    if not os.path.isfile(weights_path):
+        urllib.request.urlretrieve(
+            "https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5",
+            weights_path)
+    model.load_weights(weights_path, by_name=True,
+                    exclude=["mrcnn_class_logits", "mrcnn_bbox_fc",
+                            "mrcnn_bbox", "mrcnn_mask"])
 
     train(model, train_data, val_data, config)
     
