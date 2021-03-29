@@ -35,7 +35,7 @@ ifeq ($(FILE),)
 endif
 
 	$(MAKE) build
-	docker run -it --rm $(IMAGE_URI) --file=$(FILE)
+	docker run --gpus all -it --rm $(IMAGE_URI) --file=$(FILE)
 
 # if this do not work run: gcloud auth configure-docker
 .PHONY: push
@@ -69,7 +69,9 @@ endif
 .PHONY: freeze
 ## freeze: freeze Pipfile.lock dependencies to requirements.txt, only used for building the docker image
 freeze:
-	pipenv lock --keep-outdated --requirements > requirements.txt
+	pipenv lock --keep-outdated --requirements > requirements.txt && \
+	sed -i '/^torch.*/d' requirements.txt
+
 
 .PHONY: tensorboard
 ## tensorboard: tensorboard starts a tensorboard instance on localhost:6006

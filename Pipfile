@@ -4,18 +4,20 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-numpy = "*"
-mung = "*"
-lxml = "*"
-tqdm = "*"
-muscima = "*"
-music21 = "*"
-omrdatasettools = "*"
-google-cloud-storage = "*"
+numpy = "==1.19.2"
+mung = "==1.1"
+lxml = "==4.6.3"
+tqdm = "==4.59.0"
+muscima = "==0.10.0"
+music21 = "==6.7.1"
+omrdatasettools = "==1.3.1"
+google-cloud-storage = "==1.37.0"
 cloudml-hypertune = "==0.1.0.dev6"
-tensorflow = "*"
-matplotlib = "*"
-sklearn = "*"
+matplotlib = "==3.3.3"
+pyyaml = "==5.3.1"
+torch = "==1.8.1"
+torchvision = "==0.9.1"
+scikit-learn = "==0.24.1"
 
 [dev-packages]
 
