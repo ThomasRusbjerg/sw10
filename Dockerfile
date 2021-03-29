@@ -4,18 +4,19 @@ WORKDIR /root
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
-	apt-get install -y ffmpeg libsm6 libxext6
+	apt-get install -y build-essential git libglib2.0-0 \
+	libsm6 libxext6 libxrender-dev ffmpeg python3-opencv && \
+    rm -rf /var/cache/apk/*
+
+RUN python3 -m pip install --upgrade pip && \
+	pip --no-cache-dir install Cython
 
 COPY requirements.txt /requirements.txt
-
-RUN python3 -m pip install --upgrade pip
-
-RUN python3 -m pip install detectron2 -f \
-	https://dl.fbaipublicfiles.com/detectron2/wheels/cu111/torch1.8/index.html
 
 # Install dependencies and Remove leftover cache
 RUN python3 -m pip install -U -r /requirements.txt && \
 	rm -r .cache
+
 
 COPY service-account.json /root/
 ENV GOOGLE_APPLICATION_CREDENTIALS=./service-account.json

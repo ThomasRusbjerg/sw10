@@ -3,6 +3,8 @@ import torch, torchvision
 print(torch.__version__, torch.cuda.is_available())
 import detectron2
 print(f"Detectron2 version is {detectron2.__version__}")
+
+
 def main():
 
     training_split_file_path = "data/training_validation_test/training.txt"
