@@ -1,9 +1,14 @@
-from data_handling import muscima_loader
+import os, json, cv2, random
 import torch, torchvision
-print(torch.__version__, torch.cuda.is_available())
 import detectron2
-print(f"Detectron2 version is {detectron2.__version__}")
+from detectron2.utils.logger import setup_logger
+from detectron2 import model_zoo
+from detectron2.engine import DefaultPredictor
+from detectron2.config import get_cfg
+from detectron2.utils.visualizer import Visualizer
+from detectron2.data import MetadataCatalog, DatasetCatalog
 
+from data_handling.detectron2_muscima import muscima_detectron_dataset
 
 def main():
 
@@ -11,19 +16,41 @@ def main():
     val_split_file_path = "data/training_validation_test/validation.txt"
     test_split_file_path = "data/training_validation_test/test.txt"
 
-    images_root = "data/MUSCIMA++/v2.0/data/images"
-    mung_root = "data/MUSCIMA++/v2.0/data/annotations"
+    muscima_detectron_dataset(training_split_file_path)
 
-    training_split_file_path = "data/training_validation_test/training.txt"
-    training_split = muscima_loader.load_split(training_split_file_path)
+    exit()
+    im_gray = cv2.imread("data/MUSCIMA++/v2.0/data/images/CVC-MUSCIMA_W-01_N-10_D-ideal.png", cv2.IMREAD_GRAYSCALE)
+    im_rgb = cv2.cvtColor(im_gray, cv2.COLOR_GRAY2RGB)
+    # print(im)
+    # cv2.imshow('image',im)
+    # cv2.waitKey(0)
+  
+    # # closing all open windows
+    # cv2.destroyAllWindows()
+    # exit()
+    cfg = get_cfg()
+    # add project-specific config (e.g., TensorMask) here if you're not running a model in detectron2's core library
+    cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"))
+    cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # set threshold for this model
+    # Find a model from detectron2's model zoo. You can use the https://dl.fbaipublicfiles... url as well
+    cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml")
+    predictor = DefaultPredictor(cfg)
+    outputs = predictor(im_rgb)
 
-    # Load the (full) images and corresponding annotations
-    training_mungs, training_images = muscima_loader.load_mungs_images(
-        images_root=images_root,
-        mung_root=mung_root,
-        include_names=training_split)
-    print("Number of training examples:", len(training_images))
+    v = Visualizer(im_rgb[:, :, ::-1], MetadataCatalog.get(cfg.DATASETS.TRAIN[0]), scale=1.2)
+    out = v.draw_instance_predictions(outputs["instances"].to("cpu"))
+    print(outputs["instances"].pred_classes)
+    print(outputs["instances"].pred_boxes)
+    # cv2.imshow('image', cv2.resize(out.get_image()[:, :, ::-1], (960, 540)))
+    # cv2.waitKey(0)
+
+    # # closing all open windows
+    # cv2.destroyAllWindows()
+
 
 
 if __name__ == "__main__":
+    print(torch.__version__, torch.cuda.is_available())
+    print(f"Detectron2 version is {detectron2.__version__}")
+    setup_logger()
     main()
