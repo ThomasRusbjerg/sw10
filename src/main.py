@@ -8,7 +8,7 @@ from detectron2.config import get_cfg
 from detectron2.utils.visualizer import Visualizer
 from detectron2.data import MetadataCatalog, DatasetCatalog
 
-from data_handling.detectron2_muscima import muscima_detectron_dataset
+from data_handling.detectron2_muscima import create_muscima_detectron_dataset, load_muscima_detectron_dataset
 
 def main():
 
@@ -16,7 +16,9 @@ def main():
     val_split_file_path = "data/training_validation_test/validation.txt"
     test_split_file_path = "data/training_validation_test/test.txt"
 
-    muscima_detectron_dataset(training_split_file_path)
+    # create_muscima_detectron_dataset(val_split_file_path)
+    data = load_muscima_detectron_dataset("data/validation.pickle")
+    
 
     exit()
     im_gray = cv2.imread("data/MUSCIMA++/v2.0/data/images/CVC-MUSCIMA_W-01_N-10_D-ideal.png", cv2.IMREAD_GRAYSCALE)
