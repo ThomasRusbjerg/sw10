@@ -5,7 +5,7 @@ from data_handling import muscima_loader
 from pycocotools import mask
 from skimage import measure
 from detectron2.structures import BoxMode
-
+from tqdm import tqdm
 
 def load_muscima_detectron_dataset(split_location):
     file = open(split_location, 'rb')
@@ -49,18 +49,21 @@ def binary_mask_to_polygon(binary_mask, tolerance=0):
 
     return polygons
 
-
-def create_muscima_detectron_dataset(split_location):
-    images_root = "data/MUSCIMA++/v2.0/data/images"
-    mung_root = "data/MUSCIMA++/v2.0/data/annotations"
-
-    # Get class id mapping
+def get_muscima_classid_mapping():
     class_info_path = "data/MUSCIMA++/v2.0/mapping_all_classes.json"
     classes = {}
     with open(class_info_path) as json_file:
         data = json.load(json_file)
         for c in data:
             classes[c["name"]] = c["id"]
+    return classes
+
+def create_muscima_detectron_dataset(split_location):
+    images_root = "data/MUSCIMA++/v2.0/data/images"
+    mung_root = "data/MUSCIMA++/v2.0/data/annotations"
+
+    # Get class id mapping
+    classes = get_muscima_classid_mapping()
 
     # Load filenames for split
     split = muscima_loader.load_split(split_location)
@@ -72,12 +75,12 @@ def create_muscima_detectron_dataset(split_location):
 
     # Convert mungs to detectron2 format
     dataset = []
-    for i, mung in enumerate(mungs):
+    for i, mung in enumerate(tqdm(mungs, desc="Converting Mung to Detectron/Coco format")):
         img_id = mung.vertices[0].document
         height = images[i].shape[0]
         width = images[i].shape[1]
         img_instance = {
-            "file_name": images_root + img_id,
+            "file_name": images_root + "/" + img_id + ".png",
             "height": height,
             "width": width,
             "image_id": img_id,
@@ -91,12 +94,14 @@ def create_muscima_detectron_dataset(split_location):
             fortran_binary_mask = np.asfortranarray(mask_projected)
             encoded_mask = mask.encode(fortran_binary_mask)
             # area = mask.area(encoded_mask)
-            bounding_box = mask.toBbox(encoded_mask)
+            # bounding_box = mask.toBbox(encoded_mask).astype(int)
+            # bounding_box = annotation["bounding_box"]
+            bounding_box = [annotation.left, annotation.top, annotation.right, annotation.bottom]
             segmentations = binary_mask_to_polygon(mask_projected, tolerance=2)
             img_instance["annotations"].append(
                 {
                     "bbox": bounding_box,
-                    "bbox_mode": BoxMode.XYWH_ABS,
+                    "bbox_mode": BoxMode.XYXY_ABS,
                     "category_id": classes[annotation.class_name],
                     "segmentation": segmentations,
                 }

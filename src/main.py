@@ -1,4 +1,5 @@
 import os, json, cv2, random
+import numpy
 import torch, torchvision
 import detectron2
 from detectron2.utils.logger import setup_logger
@@ -7,18 +8,33 @@ from detectron2.engine import DefaultPredictor
 from detectron2.config import get_cfg
 from detectron2.utils.visualizer import Visualizer
 from detectron2.data import MetadataCatalog, DatasetCatalog
+from detectron2.structures import BoxMode
 
-from data_handling.detectron2_muscima import create_muscima_detectron_dataset, load_muscima_detectron_dataset
+from data_handling.detectron2_muscima import create_muscima_detectron_dataset, load_muscima_detectron_dataset, get_muscima_classid_mapping
 
 def main():
-
     training_split_file_path = "data/training_validation_test/training.txt"
     val_split_file_path = "data/training_validation_test/validation.txt"
     test_split_file_path = "data/training_validation_test/test.txt"
 
     # create_muscima_detectron_dataset(val_split_file_path)
+    # exit()
+
     data = load_muscima_detectron_dataset("data/validation.pickle")
-    
+    for dataset in ["training", "validation"]:
+        DatasetCatalog.register("muscima_" + dataset, lambda dataset=dataset: load_muscima_detectron_dataset("data/" + dataset + ".pickle"))
+        MetadataCatalog.get("muscima_" + dataset).set(thing_classes=[classname for classname in get_muscima_classid_mapping()])
+        MetadataCatalog.get("muscima_" + dataset).set(box_mode=BoxMode.XYXY_ABS)
+    muscima_metadata = MetadataCatalog.get("muscima_training")
+
+    for d in random.sample(data, 3):
+        im_gray = cv2.imread(d["file_name"], cv2.IMREAD_GRAYSCALE)
+        im_rgb = cv2.cvtColor(im_gray, cv2.COLOR_GRAY2RGB)
+        visualizer = Visualizer(im_rgb[:, :, ::-1], metadata=muscima_metadata, scale=0.5)
+        out = visualizer.draw_dataset_dict(d)
+        cv2.imshow('image', cv2.resize(out.get_image()[:, :, ::-1], (960, 540)))
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
     exit()
     im_gray = cv2.imread("data/MUSCIMA++/v2.0/data/images/CVC-MUSCIMA_W-01_N-10_D-ideal.png", cv2.IMREAD_GRAYSCALE)
