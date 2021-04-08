@@ -102,7 +102,7 @@ def create_muscima_detectron_dataset(split_location):
                 {
                     "bbox": bounding_box,
                     "bbox_mode": BoxMode.XYXY_ABS,
-                    "category_id": classes[annotation.class_name],
+                    "category_id": classes[annotation.class_name] -1, # -1 since ids start at 1
                     "segmentation": segmentations,
                 }
             )

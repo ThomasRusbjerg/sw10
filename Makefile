@@ -7,7 +7,7 @@ whoami = $(shell whoami)
 PROJECT_ID = $(shell gcloud config list project --format "value(core.project)")
 IMAGE_NAME = omr-custom
 IMAGE_TAG = $(whoami)
-IMAGE_URI = eu.gcr.io/$(PROJECT_ID)/$(IMAGE_NAME):$(IMAGE_TAG)
+IMAGE_URI = eu.gcr.io/$(PROJECT_ID)/$(IMAGE_NAME)
 
 # variables for AI platform job
 BUCKET_NAME = sw10-bucket

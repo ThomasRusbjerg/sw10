@@ -1,6 +1,6 @@
 FROM nvcr.io/nvidia/pytorch:20.12-py3
 
-WORKDIR /root
+WORKDIR /omr
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
@@ -14,21 +14,20 @@ RUN python3 -m pip install --upgrade pip && \
 COPY requirements.txt /requirements.txt
 
 # Install dependencies and Remove leftover cache
-RUN python3 -m pip install -U -r /requirements.txt && \
-	rm -r .cache
+RUN python3 -m pip install -U -r /requirements.txt 
 
 
-COPY service-account.json /root/
+COPY service-account.json /omr/
 ENV GOOGLE_APPLICATION_CREDENTIALS=./service-account.json
 
 # Copy entrypoint
-COPY docker-entrypoint.sh /root/
+COPY docker-entrypoint.sh /omr/
 
 # Copy data
-COPY data/ /root/data
+COPY data/ /omr/data
 
 # Copy code
-COPY src/ /root/src
+COPY src/ /omr/src
 
 
 ENTRYPOINT ["bash","./docker-entrypoint.sh"]
