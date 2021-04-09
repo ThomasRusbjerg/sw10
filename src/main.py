@@ -9,30 +9,57 @@ from detectron2.config import get_cfg
 from detectron2.utils.visualizer import Visualizer
 from detectron2.data import MetadataCatalog, DatasetCatalog
 from detectron2.structures import BoxMode
+from detectron2.engine import default_argument_parser, launch
+
+from detectron2.data.datasets import register_coco_instances
+
 
 from data_handling.detectron2_muscima import create_muscima_detectron_dataset, load_muscima_detectron_dataset, get_muscima_classid_mapping
-from models.mask_rcnn import mask_rcnn
+import models.detr.train_net as detr_train
+
+def detr():
+    args = default_argument_parser().parse_args()
+    setattr(args, 'config_file', 'src/models/detr/configs/detr_256_6_6_torchvision.yaml')
+    # setattr(args, 'num_gpus', 1)
+    # setattr(args, 'coco_path', "data/coco")
+    # setattr(args, 'output_dir', "/user/student.aau.dk/trusbj16")
+
+    # args["config_file"] = "models/detr/configs/detr_256_6_6_torchvision.yaml"
+    print(args)
+    # exit()
+    print("Command Line Args:", args)
+    launch(
+        detr_train.main,
+        args.num_gpus,
+        num_machines=args.num_machines,
+        machine_rank=args.machine_rank,
+        dist_url=args.dist_url,
+        args=(args,),
+    )
 
 def main():
-    # print("Hello world!")
-    # exit()
     training_split_file_path = "data/training_validation_test/training.txt"
     val_split_file_path = "data/training_validation_test/validation.txt"
     test_split_file_path = "data/training_validation_test/test.txt"
 
-    # create_muscima_detectron_dataset(val_split_file_path)
-
+    # create_muscima_detectron_dataset(training_split_file_path)
+    # exit()
     data = load_muscima_detectron_dataset("data/validation.pickle")
     for dataset in ["training", "validation"]:
         DatasetCatalog.register("muscima_" + dataset, lambda dataset=dataset: load_muscima_detectron_dataset("data/" + dataset + ".pickle"))
         MetadataCatalog.get("muscima_" + dataset).set(thing_classes=[classname for classname in get_muscima_classid_mapping()])
-        # MetadataCatalog.get("muscima_" + dataset).set(box_mode=BoxMode.XYXY_ABS)
+        MetadataCatalog.get("muscima_" + dataset).set(box_mode=BoxMode.XYXY_ABS)
     muscima_metadata = MetadataCatalog.get("muscima_training")
+
+    # register_coco_instances("detr_train", {}, "data/coco/annotations/instances_train2017.json", "data/coco/train2017")
+    # register_coco_instances("detr_val", {}, "data/coco/annotations/instances_val2017.json", "data/coco/val2017")
+    # register_coco_instances("test_detr_coco", {}, "./data/trainval.json", "./data/images")
+    detr()
     # print(muscima_metadata)
     # exit()
     # mask_rcnn.train()
     # exit()
-    stuff()
+    # stuff()
 
 def stuff():
     im_gray = cv2.imread("data/MUSCIMA++/v2.0/data/images/CVC-MUSCIMA_W-01_N-10_D-ideal.png", cv2.IMREAD_GRAYSCALE)

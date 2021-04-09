@@ -12,5 +12,5 @@ mkdir -p /raid/student.trusbj16 #setup storage /raid/<subdomain>.<username>.
 
 ## Run actual analysis
 ## The benefit with using multiple srun commands is that this creates sub-jobs for your sbatch script and be uded for advanced usage with SLURM (e.g. create checkpoints, recovery, ect)
-srun singularity build --fakeroot omr.sif omr.def
-srun --gres=gpu:1 singularity run --nv omr.sif --file=/omr/src/main.py
+srun singularity build --force --fakeroot omr.sif omr.def
+srun --gres=gpu:1 singularity run --nv omr.sif --file=/omr/src/main.py --num-gpus=1 OUTPUT_DIR /user/student.aau.dk/trusbj16/output

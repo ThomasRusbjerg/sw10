@@ -10,6 +10,9 @@ do
         shift # past argument=value
         ;;
     esac
+    if [[ $i == *"omr/"* ]]; then
+        cd /omr
+    fi
 done
 
 echo "Running training job: ${FILE} with Arguments: $@ \n"
