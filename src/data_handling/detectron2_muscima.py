@@ -58,12 +58,21 @@ def get_muscima_classid_mapping():
             classes[c["name"]] = c["id"]
     return classes
 
+def get_muscima_imgid_mapping():
+    img_info_path = "data/MUSCIMA++/v2.0/mapping_img.json"
+    images_mappings = {}
+    with open(img_info_path) as json_file:
+        data = json.load(json_file)
+        images_mappings = data
+    return images_mappings
+
 def create_muscima_detectron_dataset(split_location):
     images_root = "data/MUSCIMA++/v2.0/data/images"
     mung_root = "data/MUSCIMA++/v2.0/data/annotations"
 
     # Get class id mapping
     classes = get_muscima_classid_mapping()
+    img_id_mapping = get_muscima_imgid_mapping()
 
     # Load filenames for split
     split = muscima_loader.load_split(split_location)
@@ -76,17 +85,17 @@ def create_muscima_detectron_dataset(split_location):
     # Convert mungs to detectron2 format
     dataset = []
     for i, mung in enumerate(tqdm(mungs, desc="Converting Mung to Detectron/Coco format")):
-        img_id = mung.vertices[0].document
+        img_name = mung.vertices[0].document
+        img_id = list(filter(lambda img: img['name'] == img_name, img_id_mapping))[0]['id']
         height = images[i].shape[0]
         width = images[i].shape[1]
         img_instance = {
-            "file_name": images_root + "/" + img_id + ".png",
+            "file_name": images_root + "/" + img_name + ".png",
             "height": height,
             "width": width,
             "image_id": img_id,
             "annotations": [],
         }
-
         for annotation in mung.vertices:
             # Convert bbox mask to image mask
             mask_projected = annotation.project_on(images[i])
