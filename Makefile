@@ -35,7 +35,7 @@ ifeq ($(FILE),)
 endif
 
 	$(MAKE) build
-	docker run --gpus all -it --rm $(IMAGE_URI) --file=$(FILE)
+	docker run --gpus all -it --rm $(IMAGE_URI) --file=$(FILE) --output_dir=$(OUTPUT_DIR)
 
 # if this do not work run: gcloud auth configure-docker
 .PHONY: push
@@ -77,7 +77,7 @@ freeze:
 ## tensorboard: tensorboard starts a tensorboard instance on localhost:6006
 tensorboard:
 	xdg-open http://localhost:6006 && \
-	pipenv run tensorboard --logdir "gs://sw10-bucket/omr/jobs"
+	pipenv run tensorboard --logdir="gs://sw10-bucket/omr/jobs"
 
 .PHONY: help
 ## help: prints this help message

@@ -16,8 +16,6 @@ MODEL:
 DATASETS:
   TRAIN: ("muscima_training",)
   TEST: ("muscima_validation",)
-  # TRAIN: ("detr_train",)
-  # TEST: ("detr_val",)
 SOLVER:
   IMS_PER_BATCH: 1
   BASE_LR: 0.0001
