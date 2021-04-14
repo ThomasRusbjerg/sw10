@@ -1,9 +1,9 @@
 # Source: https://github.com/apacha/MusicObjectDetector-TF
 
-""" Generates a label map of the classes in the MUSCIMA++ dataset, which is
-    required for using the TF Object Detection API. """
+""" Generates mappings for images and classes in muscima++ """
 
 import os
+import json
 import muscima.io
 import glob
 from collections import Counter
@@ -12,7 +12,15 @@ import argparse
 from mung.io import read_nodes_from_file
 from tqdm import tqdm
 
-if __name__ == "__main__":
+def image_mappings():
+    img_mappings = []
+    for i, img in enumerate(os.listdir("data/MUSCIMA++/v2.0/data/images")):
+        img_name = img[:-4]
+        img_mappings.append({"name": img_name, "id": i})
+    with open('data/MUSCIMA++/v2.0/mapping_img.json', 'w') as f:
+        json.dump(img_mappings, f)
+
+def class_mappings():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_dir", default="data/MUSCIMA++/v2.0/data/annotations/")
     parser.add_argument("--mapping_output_path", default="mapping_all_classes.json")
@@ -74,3 +82,6 @@ if __name__ == "__main__":
 }}, 
 """.format(i + 1, classname))
         f.write("]")
+
+if __name__ == "__main__":
+    image_mappings()
