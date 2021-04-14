@@ -2,7 +2,7 @@ data
 .idea
 .vscode
 service-account.json
-
+output/
 
 # GitHub python default gitignore
 

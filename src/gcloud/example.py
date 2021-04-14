@@ -7,7 +7,7 @@ import numpy as np
 from tensorflow import keras
 from datetime import date, datetime
 
-import gs_utils
+from gcloud import gs_utils
 
 def _parse_args(argv):
     """ Parses command-line arguments. """
