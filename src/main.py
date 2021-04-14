@@ -14,15 +14,20 @@ from detectron2.engine import default_argument_parser, launch
 from detectron2.data.datasets import register_coco_instances
 
 from datetime import date, datetime
-from data_handling.detectron2_muscima import create_muscima_detectron_dataset, load_muscima_detectron_dataset, get_muscima_classid_mapping
+from data_handling.detectron2_muscima import (
+    create_muscima_detectron_dataset,
+    load_muscima_detectron_dataset,
+    get_muscima_classid_mapping,
+)
 import models.detr.train_net as detr_train
+
 
 def detr():
     args = default_argument_parser().parse_args()
-    setattr(args, 'config_file', 'src/models/detr/configs/detr_256_6_6_torchvision.yaml')
-    setattr(args, 'num_classes', 128)
-    setattr(args, 'num_gpus', 1)
-    setattr(args, 'num_queries', 1000)
+    setattr(
+        args, "config_file", "src/models/detr/configs/detr_256_6_6_torchvision.yaml"
+    )
+    setattr(args, "num_gpus", 1)
 
     print("Command Line Args:", args)
     launch(
@@ -34,17 +39,6 @@ def detr():
         args=(args,),
     )
 
-def main():
-    training_split_file_path = "data/training_validation_test/training.txt"
-    val_split_file_path = "data/training_validation_test/validation.txt"
-    test_split_file_path = "data/training_validation_test/test.txt"
-
-    data = load_muscima_detectron_dataset("data/validation.pickle")
-    for dataset in ["training", "validation"]:
-        DatasetCatalog.register("muscima_" + dataset, lambda dataset=dataset: load_muscima_detectron_dataset("data/" + dataset + ".pickle"))
-        MetadataCatalog.get("muscima_" + dataset).set(thing_classes=[classname for classname in get_muscima_classid_mapping()])
-
-    detr()
 
 def visualise_examples():
     muscima_metadata = MetadataCatalog.get("muscima_training")
@@ -53,9 +47,32 @@ def visualise_examples():
         img = cv2.imread(d["file_name"])
         visualizer = Visualizer(img[:, :, ::-1], metadata=muscima_metadata, scale=0.5)
         out = visualizer.draw_dataset_dict(d)
-        cv2.imshow('image', cv2.resize(out.get_image()[:, :, ::-1], (960, 540))) # ::-1 converts BGR to RGB
+        cv2.imshow(
+            "image", cv2.resize(out.get_image()[:, :, ::-1], (960, 540))
+        )  # ::-1 converts BGR to RGB
         cv2.waitKey(0)
         cv2.destroyAllWindows()
+
+
+def main():
+    training_split_file_path = "data/training_validation_test/training.txt"
+    val_split_file_path = "data/training_validation_test/validation.txt"
+    test_split_file_path = "data/training_validation_test/test.txt"
+
+    data = load_muscima_detectron_dataset("data/validation.pickle")
+    for dataset in ["training", "validation"]:
+        DatasetCatalog.register(
+            "muscima_" + dataset,
+            lambda dataset=dataset: load_muscima_detectron_dataset(
+                "data/" + dataset + ".pickle"
+            ),
+        )
+        MetadataCatalog.get("muscima_" + dataset).set(
+            thing_classes=[classname for classname in get_muscima_classid_mapping()]
+        )
+
+    detr()
+
 
 if __name__ == "__main__":
     print(torch.__version__, torch.cuda.is_available())

@@ -17,10 +17,11 @@ DATASETS:
   TRAIN: ("muscima_training",)
   TEST: ("muscima_validation",)
 SOLVER:
+  CHECKPOINT_PERIOD: 4620 # Maxiter/5
   IMS_PER_BATCH: 1
   BASE_LR: 0.0001
-  # STEPS: (369600,)
-  # MAX_ITER: 554400
+  # STEPS: (369600,) # Detr default
+  # MAX_ITER: 554400 # Detr default
   STEPS: (15400,)
   MAX_ITER: 23100
   WARMUP_FACTOR: 1.0
