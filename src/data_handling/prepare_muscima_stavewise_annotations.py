@@ -10,6 +10,8 @@ from tqdm import tqdm
 from mung.node import Node
 from mung.io import read_nodes_from_file
 
+from lxml.etree import Element, SubElement, tostring
+
 
 def cut_images(muscima_pp_dataset_directory: str, output_path: str,
                exported_annotations_file_path: str, annotations_path: str):
@@ -21,7 +23,6 @@ def cut_images(muscima_pp_dataset_directory: str, output_path: str,
 
     annotations_dictionary = load_all_muscima_annotations(muscima_pp_dataset_directory)
     crop_annotations = []
-    croppings = []
 
     image_paths = glob(muscima_image_directory)
     for image_path in tqdm(image_paths, desc="Cutting images"):
@@ -53,7 +54,6 @@ def cut_images(muscima_pp_dataset_directory: str, output_path: str,
                           image_height)
 
         output_image_counter = 1
-        crop_positions = []
         for staff_index in range(len(staff_objects)):
             staff = staff_objects[staff_index]
             if staff_index < len(staff_objects) - 1:
@@ -70,7 +70,7 @@ def cut_images(muscima_pp_dataset_directory: str, output_path: str,
             file_name = "{0}_{1}.png".format(image_name, output_image_counter)
             output_image_counter += 1
 
-            objects_appearing_in_cropped_image = \
+            objects_appearing_in_cropped_image, nodes_appearing_in_cropped_image = \
                 compute_objects_appearing_in_cropped_image(file_name,
                                                            image_crop_bounding_box_top_left_bottom_right,
                                                            objects_appearing_in_image)
@@ -84,29 +84,52 @@ def cut_images(muscima_pp_dataset_directory: str, output_path: str,
                 trans_top, trans_left, trans_bottom, trans_right = translated_bounding_box
                 crop_annotations.append([file_name, trans_left, trans_top, trans_right, trans_bottom, class_name])
 
-            # todo: Create annotations in appropriate format here
-
+            create_muscima_annotations(annotations_path,
+                                       file_name,
+                                       nodes_appearing_in_cropped_image)
 
             output_file = os.path.join(output_path, file_name)
             cropped_image.save(output_file, "png")
-            crop_positions.append({
-                "file_name": file_name,
-                "width": cropped_image.width,
-                "height": cropped_image.height,
-                "left_offset": left_offset,
-                "top_offset": top_offset
-            })
 
-        croppings.append({
-            "image_path": image_path,
-            "crops": crop_positions
-        })
 
-    with open(os.path.join(output_path, "../croppings.json"), "w") as file:
-        json.dump(croppings, file)
-    annotation_data = pandas.DataFrame(crop_annotations,
-                                       columns=['filename', 'left', 'top', 'right', 'bottom', 'class'])
-    annotation_data.to_csv(exported_annotations_file_path, index=False)
+# Does not create mask and outlink annotations
+def create_muscima_annotations(annotations_folder: str,
+                               file_name: str,
+                               nodes_appearing_in_image: List[Node]):
+    os.makedirs(annotations_folder, exist_ok=True)
+
+    file_name = os.path.basename(file_name)[:-4]  # cut away the extension .png
+
+    # todo: add xsi:noNamespaceSchemaLocation
+    nodes = Element("Nodes",
+                    dataset="MUSCIMA-pp_2.0",
+                    document=file_name)
+    for music_object in nodes_appearing_in_image:
+        node = SubElement(nodes, "Node")
+        identifier = SubElement(node, "Id")
+        identifier.text = music_object.id.__str__()
+        class_name = SubElement(node, "ClassName")
+        class_name.text = music_object.class_name
+        top = SubElement(node, "Top")
+        top.text = music_object.top.__str__()
+        left = SubElement(node, "Left")
+        left.text = music_object.left.__str__()
+        width = SubElement(node, "Width")
+        width.text = music_object.width.__str__()
+        height = SubElement(node, "Height")
+        height.text = music_object.height.__str__()
+
+        # Outlinks will not be correct because of cropping
+
+        # outlinks = SubElement(node, "Outlinks")
+        # outlinks.text = music_object.outlinks.__str__()[1:-1].replace(',', '')
+
+    xml_file_path = os.path.join(annotations_folder,
+                                 os.path.splitext(file_name)[0] + ".xml")
+    pretty_xml_string = tostring(nodes, pretty_print=True)
+
+    with open(xml_file_path, "wb") as xml_file:
+        xml_file.write(pretty_xml_string)
 
 
 def load_all_muscima_annotations(muscima_pp_dataset_directory) -> Dict[str, List[Node]]:
@@ -116,7 +139,7 @@ def load_all_muscima_annotations(muscima_pp_dataset_directory) -> Dict[str, List
     """
     raw_data_directory = os.path.join(muscima_pp_dataset_directory, "v2.0", "data", "annotations")
     all_xml_files = [y for x in os.walk(raw_data_directory) for y in glob(os.path.join(x[0], '*.xml'))]
-    all_xml_files = all_xml_files[:1]
+    all_xml_files = all_xml_files
     node_annotations = {}
     for xml_file in tqdm(all_xml_files, desc='Parsing annotation files'):
         nodes = read_nodes_from_file(xml_file)
@@ -144,11 +167,12 @@ def compute_objects_appearing_in_cropped_image(file_name: str,
                                                image_crop_bounding_box_top_left_bottom_right: Tuple[int, int, int, int],
                                                all_music_objects_appearing_in_image: List[Node],
                                                intersection_over_area_threshold_for_inclusion=0.8) \
-        -> List[Tuple[str, str, Tuple[int, int, int, int]]]:
+        -> Tuple[List[Tuple[str, str, Tuple[int, int, int, int]]], List[Node]]:
     x_translation_for_cropped_image = image_crop_bounding_box_top_left_bottom_right[1]
     y_translation_for_cropped_image = image_crop_bounding_box_top_left_bottom_right[0]
 
     objects_appearing_in_cropped_image: List[Tuple[str, str, Tuple[int, int, int, int]]] = []
+    nodes_appearing_in_cropped_image: List[Node] = []
     for music_object in all_music_objects_appearing_in_image:
         if music_object.class_name in ["staff", "staff_line", "staff_space"]:
             continue
@@ -160,30 +184,35 @@ def compute_objects_appearing_in_cropped_image(file_name: str,
             img_top, img_left, img_bottom, img_right = image_crop_bounding_box_top_left_bottom_right
             img_width = img_right - img_left - 1
             img_height = img_bottom - img_top - 1
+
             translated_bounding_box = (
-                max(0, top - y_translation_for_cropped_image),
-                max(0, left - x_translation_for_cropped_image),
-                min(img_height, bottom - y_translation_for_cropped_image),
-                min(img_width, right - x_translation_for_cropped_image))
-            objects_appearing_in_cropped_image.append((file_name, music_object.class_name, translated_bounding_box))
+                max(0, top - y_translation_for_cropped_image),              # Top
+                max(0, left - x_translation_for_cropped_image),             # Left
+                min(img_height, bottom - y_translation_for_cropped_image),  # Bottom
+                min(img_width, right - x_translation_for_cropped_image))    # Right
 
-    return objects_appearing_in_cropped_image
-
-
-def compute_statistics(annotations_csv):
-    # Create statistics for how many instances of each class exist
-    annotations = pandas.read_csv(annotations_csv)
-    classes = annotations[['class']].groupby('class').size().reset_index(name='counts')  # type: pandas.DataFrame
-    classes.to_csv("data/Class-Statistics.csv", header=True, index=False)
+            objects_appearing_in_cropped_image.append((file_name,
+                                                       music_object.class_name,
+                                                       translated_bounding_box))
+            nodes_appearing_in_cropped_image.append(
+                Node(music_object.id,
+                     music_object.class_name,
+                     top=translated_bounding_box[0],
+                     left=translated_bounding_box[1],
+                     height=translated_bounding_box[2]-translated_bounding_box[0],
+                     width=translated_bounding_box[3]-translated_bounding_box[1],
+                     outlinks=music_object.outlinks))
+    return objects_appearing_in_cropped_image, nodes_appearing_in_cropped_image
 
 
 if __name__ == "__main__":
     muscima_pp_dataset_directory = os.path.join("data", "MUSCIMA++")
 
-    annotations_csv = "data/Stavewise_Annotations.csv"
+    annotations_csv = "data/MUSCIMA++/stavewise_Annotations.csv"
     cut_images(muscima_pp_dataset_directory,
-               "data/muscima_pp_cropped_images_with_stafflines",
+               "data/MUSCIMA++/muscima_pp_cropped_images_with_stafflines",
                annotations_csv,
-               "data/Stavewise_Annotations")
+               "data/MUSCIMA++/stavewise_annotations")
 
-    compute_statistics(annotations_csv)
+    print("Cropped images saved in: \"data/MUSCIMA++/muscima_pp_cropped_images_with_stafflines\"")
+    print("Annotations for cropped images saved in: \"data/MUSCIMA++/stavewise_annotations\"")

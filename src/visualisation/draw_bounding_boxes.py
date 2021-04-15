@@ -6,7 +6,6 @@ from glob import glob
 
 import cv2
 import argparse
-import json
 
 from PIL import ImageColor
 from mung.io import read_nodes_from_file
@@ -72,14 +71,17 @@ if __name__ == "__main__":
     parser.add_argument('--annotations', dest='annotations', type=str,
                         help='Path to the annotations (file or directory).',
                         default="data/MUSCIMA++/v2.0/data/annotations")
+    # Defaults to args.image/with_bboxes
     parser.add_argument('--save_directory', dest='save_directory', type=str,
-                        help='Directory, where to save the processed image.',
-                        default="data/drawn_bboxes")
+                        help='Directory, where to save the processed image.')
     parser.add_argument('--label_map', dest='label_map', type=str,
                         default="data/MUSCIMA++/v2.0/mapping_all_classes.json",
                         help='Path to the label map, which is json-file that'
                              'maps each category name to a unique number.')
     args = parser.parse_args()
+
+    if args.save_directory is None:
+        args.save_directory = os.path.join(args.image, "with_bboxes")
 
     # Create a dict of the classes with key-value pair: name, id
     classes_mapping = get_muscima_classid_mapping()
