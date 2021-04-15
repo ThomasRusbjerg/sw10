@@ -100,7 +100,6 @@ def create_muscima_annotations(annotations_folder: str,
 
     file_name = os.path.basename(file_name)[:-4]  # cut away the extension .png
 
-    # todo: add xsi:noNamespaceSchemaLocation
     nodes = Element("Nodes",
                     dataset="MUSCIMA-pp_2.0",
                     document=file_name)
