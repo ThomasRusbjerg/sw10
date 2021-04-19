@@ -1,3 +1,5 @@
+# Source: https://github.com/apacha/MusicObjectDetector-TF/blob/master/MusicObjectDetector/draw_bounding_boxes.py
+
 """Given MUSCIMA++ v2.0 images and annotations, draws bounding boxes and
    class name labels for each object in the image"""
 

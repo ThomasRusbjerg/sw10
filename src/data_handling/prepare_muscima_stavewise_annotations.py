@@ -1,10 +1,9 @@
-import json
+# Source: https://github.com/apacha/MusicObjectDetector-TF/blob/master/MusicObjectDetector/prepare_muscima_stavewise_annotations.py
 import os
 import shutil
 from glob import glob
 from typing import Tuple, List, Dict
 
-import pandas
 from PIL import Image
 from tqdm import tqdm
 from mung.node import Node
