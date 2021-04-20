@@ -3,6 +3,7 @@ data
 .vscode
 service-account.json
 output/
+models/
 
 # GitHub python default gitignore
 

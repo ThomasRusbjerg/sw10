@@ -139,7 +139,6 @@ def main(args):
     trainer = Trainer(cfg)
     trainer.resume_or_load(resume=args.resume)
     trainer.train()
-    trainer.checkpointer.save("done")
 
 
 if __name__ == "__main__":

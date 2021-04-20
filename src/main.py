@@ -1,19 +1,12 @@
-import os, json, cv2, random
-import numpy
-import torch, torchvision
+import cv2, random
+import torch
 import detectron2
 from detectron2.utils.logger import setup_logger
-from detectron2 import model_zoo
 from detectron2.engine import DefaultPredictor
-from detectron2.config import get_cfg
 from detectron2.utils.visualizer import Visualizer
 from detectron2.data import MetadataCatalog, DatasetCatalog
-from detectron2.structures import BoxMode
 from detectron2.engine import default_argument_parser, launch
 
-from detectron2.data.datasets import register_coco_instances
-
-from datetime import date, datetime
 from data_handling.detectron2_muscima import (
     create_muscima_detectron_dataset,
     load_muscima_detectron_dataset,
@@ -21,14 +14,7 @@ from data_handling.detectron2_muscima import (
 )
 import models.detr.train_net as detr_train
 
-
-def detr():
-    args = default_argument_parser().parse_args()
-    setattr(
-        args, "config_file", "src/models/detr/configs/detr_256_6_6_torchvision.yaml"
-    )
-    setattr(args, "num_gpus", 1)
-
+def detr(args):
     print("Command Line Args:", args)
     launch(
         detr_train.main,
@@ -40,26 +26,31 @@ def detr():
     )
 
 
-def visualise_examples():
-    muscima_metadata = MetadataCatalog.get("muscima_training")
-    muscima = DatasetCatalog.get("muscima_training")
-    for d in random.sample(muscima, 3):
-        img = cv2.imread(d["file_name"])
-        visualizer = Visualizer(img[:, :, ::-1], metadata=muscima_metadata, scale=0.5)
-        out = visualizer.draw_dataset_dict(d)
+def visualise(cfg, data, metadata, n_samples):
+    pred = DefaultPredictor(cfg)
+    for d in random.sample(data, n_samples):
+        im = cv2.imread(d["file_name"])
+        outputs = pred(im)  # format is documented at https://detectron2.readthedocs.io/tutorials/models.html#model-output-format
+        v = Visualizer(im[:, :, ::-1],
+                    metadata=metadata, 
+                    scale=0.5
+        )
+        out = v.draw_instance_predictions(outputs["instances"].to("cpu"))
         cv2.imshow(
-            "image", cv2.resize(out.get_image()[:, :, ::-1], (960, 540))
+            "image", out.get_image()[:, :, ::-1]
         )  # ::-1 converts BGR to RGB
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
 
 def main():
-    training_split_file_path = "data/training_validation_test/training.txt"
-    val_split_file_path = "data/training_validation_test/validation.txt"
-    test_split_file_path = "data/training_validation_test/test.txt"
+    # Create detectron format datasets
+    # training_split_file_path = "data/training_validation_test/training.txt"
+    # val_split_file_path = "data/training_validation_test/validation.txt"
+    # test_split_file_path = "data/training_validation_test/test.txt"
+    # create_muscima_detectron_dataset(training_split_file_path)
 
-    data = load_muscima_detectron_dataset("data/validation.pickle")
+    # Register datasets in detectron
     for dataset in ["training", "validation"]:
         DatasetCatalog.register(
             "muscima_" + dataset,
@@ -71,7 +62,22 @@ def main():
             thing_classes=[classname for classname in get_muscima_classid_mapping()]
         )
 
-    detr()
+    # Setup DETR config
+    args = default_argument_parser().parse_args()
+    setattr(
+        args, "config_file", "src/models/detr/configs/detr_256_6_6_torchvision.yaml"
+    )
+    setattr(args, "num_gpus", 1)
+    # setattr(args, "opts", ['MODEL.WEIGHTS', 'models/model_final.pth'])
+    cfg = detr_train.setup(args)
+
+    # Predict and visualise
+    # muscima_metadata = MetadataCatalog.get("muscima_validation")
+    # data = load_muscima_detectron_dataset("data/validation.pickle")
+    # visualise(cfg, data, muscima_metadata, 1)
+    
+    # Training
+    detr(args)
 
 
 if __name__ == "__main__":
