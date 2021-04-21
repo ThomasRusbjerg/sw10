@@ -45,11 +45,15 @@ STANDARD_COLORS = [
 def draw_bounding_boxes_into_image(image_path: str,
                                    ground_truth_annotations_path: str,
                                    destination_path: str,
-                                   classes_mapping : dict):
+                                   classes_mapping : dict,
+                                   classes):
     music_objects = read_nodes_from_file(ground_truth_annotations_path)
     img = cv2.imread(image_path)
-
     for index, music_object in enumerate(music_objects):
+        # If classes to draw are specified
+        if classes:
+            if music_object.class_name not in classes:
+                continue
         # String to float, float to int
         x1 = music_object.left
         y1 = music_object.top
@@ -80,6 +84,12 @@ if __name__ == "__main__":
                         default="data/MUSCIMA++/v2.0/mapping_all_classes.json",
                         help='Path to the label map, which is json-file that'
                              'maps each category name to a unique number.')
+    parser.add_argument('-c', '--classes', dest='classes', action='append',
+                        default=[],
+                        help="The classes to draw bboxes for."
+                             "For each class, supply to new -c argument,"
+                             "e.g. \"-c noteheadFull -c barline\"")
+
     args = parser.parse_args()
 
     if args.save_directory is None:
@@ -113,4 +123,4 @@ if __name__ == "__main__":
             total=len(output_files),
             desc="Drawing annotations"):
         draw_bounding_boxes_into_image(image, annotation, output,
-                                       classes_mapping)
+                                       classes_mapping, args.classes)

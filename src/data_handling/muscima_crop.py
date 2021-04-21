@@ -39,18 +39,20 @@ def cut_images(image_paths, annotations_dictionary, output_path: str,
                            image_width, image_height, image_name, crop_annotations,
                            output_path)
         elif method == "measures":
-            crop_to_measures(image, objects_appearing_in_image, image_path,
-                             image_width, image_height, image_name, crop_annotations,
-                             output_path)
+            crop_to_measures(image, objects_appearing_in_image,
+                             image_name, crop_annotations, output_path)
 
 
 def barlines_in_each_staff(barlines: List[Node]):
     # Order barlines in correct order
     first_barline_of_every_staff = []
+
+    # todo: This may be wrong, it is possible for the second staff first barline to be closest
     # The first barline is the one closest to the top left corner
     node_top_left_corner = Node(0, "", 0, 0, 0, 0, document=barlines[0].document)
     first_barline = sorted(barlines, key=lambda barline: barline.distance_to(node_top_left_corner))[0]
 
+    # todo: This is flawed, barlines are not vertically aligned
     # Add the rest of the leftmost barlines
     first_barline_of_every_staff += list(filter(
         lambda barline: abs(barline.left - first_barline.left < 10), barlines))
@@ -66,10 +68,19 @@ def barlines_in_each_staff(barlines: List[Node]):
     return result
 
 
-def crop_to_measures(image, objects_appearing_in_image, image_path,
-                     image_width, image_height, image_name, crop_annotations,
-                     output_path):
-    barlines = [x for x in objects_appearing_in_image if x.class_name == "barline"]
+def crop_to_measures_old(image, objects_appearing_in_image,
+                     image_name, crop_annotations, output_path):
+    barlines = [x for x in objects_appearing_in_image if x.class_name == "staff"]
+    barlines.sort(key=lambda b: b.id)
+    for i, barline in enumerate(barlines):
+        print(barline.id)
+        from PIL import ImageDraw, ImageFont
+        image = image.convert('RGB')
+        imagedraw = ImageDraw.Draw(image)
+        fnt = ImageFont.truetype("Pillow/Tests/fonts/FreeMono.ttf", 40)
+        imagedraw.text((barline.left, barline.top), text=barline.id.__str__(), fill='red', font=fnt)
+        image.save(image_name + "bbox_test.png")
+    exit()
 
     # If no barlines are in this image
     if barlines is None:
@@ -78,9 +89,16 @@ def crop_to_measures(image, objects_appearing_in_image, image_path,
     # Barlines are read in no particular order, so get them for each staff
     staves = barlines_in_each_staff(barlines)
 
+    # todo: Sometimes the barlines span ~5 staves, so take only one staff, one measure
+    #       But the same barline has to be used to crop different measures in different staves, then!
+    # todo: I wrongly assumed each staff starts with a barline - but many do not
+
+    # todo: Handle case where barlines basically touch (double barline)
+
+    vertical_padding = 120
+
     # Go through each staff and crop to measure
     for staff_index in range(len(staves)):
-        print("staff:", len(staves[0]))
         for barline_index in range(len(staves[staff_index])):
             # If the last barline is reached, you're finished
             if barline_index == len(staves[staff_index]) - 1:
@@ -89,12 +107,12 @@ def crop_to_measures(image, objects_appearing_in_image, image_path,
             left_barline = staves[staff_index][barline_index]
             right_barline = staves[staff_index][barline_index + 1]
 
-            measure_bbox_tlbr = (left_barline.top + vertical_padding,
+            measure_bbox_tlbr = (left_barline.top - vertical_padding,
                                  left_barline.left,
                                  left_barline.bottom + vertical_padding,
                                  right_barline.right)
             measure_bbox_ltrb = (left_barline.left,
-                                 left_barline.top + vertical_padding,
+                                 left_barline.top - vertical_padding,
                                  right_barline.right,
                                  left_barline.bottom + vertical_padding)
 
@@ -122,7 +140,97 @@ def crop_to_measures(image, objects_appearing_in_image, image_path,
             os.makedirs(image_output_path, exist_ok=True)
 
             output_file = os.path.join(image_output_path, file_name)
+            try:
+                cropped_image.save(output_file, "png")
+            except SystemError:
+                print(measure_bbox_ltrb)
+                print(image.height)
+                print(image.width)
+                from PIL import ImageDraw
+                image = image.convert('RGB')
+                imagedraw = ImageDraw.Draw(image)
+                imagedraw.rectangle(measure_bbox_ltrb, outline='red', width=3)
+                image.save(image_name + "bbox_test.png")
+                exit()
+
+
+def crop_to_measures(image, objects_appearing_in_image,
+                     image_name, crop_annotations, output_path):
+    staves = [x for x in objects_appearing_in_image if x.class_name == "staff"]
+    mss = [x for x in objects_appearing_in_image if x.class_name == "measureSeparator"]
+
+    # If no staves are in this image
+    if staves is None:
+        return
+
+    vertical_padding = 120
+
+    # Go through each staff and crop to measure
+    measure_bboxes = []
+    for staff_index, staff in enumerate(staves):
+        measure_begin = staff.left
+        ms_in_staff = list(filter(lambda b: staff.overlaps(b), mss))
+        ms_in_staff = sorted(ms_in_staff, key=lambda x: x.left)
+        for measure_index, ms in enumerate(ms_in_staff):
+            # If end of staff is reached, go to next staff
+            if abs(measure_begin - staff.right) < 20:
+                break
+            # todo: Check if the 0 and image.height works or not
+            measure_bbox_tlbr = (0 if staff_index == 0 else staff.top - vertical_padding,
+                                 measure_begin,
+                                 image.height if staff_index == len(staves) - 1 else staff.bottom + vertical_padding,
+                                 ms.right)
+            measure_bbox_ltrb = (measure_begin,
+                                 0 if staff_index == 0 else staff.top - vertical_padding,
+                                 ms.right,
+                                 image.height if staff_index == len(staves) - 1 else staff.bottom + vertical_padding)
+
+            # from PIL import 2ImageDraw
+            # image = image.convert('RGB')
+            # imagedraw = ImageDraw.Draw(image)
+            # imagedraw.rectangle(measure_bbox_ltrb, outline='red', width=3)
+            # image.save(image_name + "bbox_test.png")
+
+            # Next measure begins at the current measure separator
+            measure_begin = ms.left
+
+            file_name = f"{image_name}_{staff_index+1}_{measure_index+1}.png"
+
+            objects_in_cropped_image, nodes_appearing_in_cropped_image = \
+                get_objects_in_cropped_image(file_name,
+                                             measure_bbox_tlbr,
+                                             objects_appearing_in_image)
+
+            cropped_image = image.crop(measure_bbox_ltrb).convert('RGB')
+
+            for object_in_cropped_image in objects_in_cropped_image:
+                file_name = object_in_cropped_image[0]
+                class_name = object_in_cropped_image[1]
+                translated_bounding_box = object_in_cropped_image[2]
+                trans_top, trans_left, trans_bottom, trans_right = translated_bounding_box
+                crop_annotations.append([file_name, trans_left, trans_top, trans_right, trans_bottom, class_name])
+
+            create_muscima_annotations(output_path + "annotations",
+                                       file_name,
+                                       nodes_appearing_in_cropped_image)
+
+            image_output_path = output_path + "images/"
+            os.makedirs(image_output_path, exist_ok=True)
+
+            output_file = os.path.join(image_output_path, file_name)
+
             cropped_image.save(output_file, "png")
+            # try:
+            # except SystemError:
+            #     print(measure_bbox_ltrb)
+            #     print(image.height)
+            #     print(image.width)
+            #     from PIL import ImageDraw
+            #     image = image.convert('RGB')
+            #     imagedraw = ImageDraw.Draw(image)
+            #     imagedraw.rectangle(measure_bbox_ltrb, outline='red', width=3)
+            #     image.save(image_name + "bbox_test.png")
+            #     exit()
 
 
 def crop_to_staves(image, objects_appearing_in_image, image_path,
@@ -226,8 +334,7 @@ def load_all_muscima_annotations(annotations_directory) -> Dict[str, List[Node]]
     :param annotations_directory:
     :return: Returns a dictionary of annotations with the filename as key
     """
-    all_xml_files = [y for x in os.walk(annotations_directory) for y in glob(os.path.join(x[0], '*.xml'))][:1]
-    all_xml_files = all_xml_files
+    all_xml_files = [y for x in os.walk(annotations_directory) for y in glob(os.path.join(x[0], '*.xml'))]
     node_annotations = {}
     for xml_file in tqdm(all_xml_files, desc='Parsing annotation files'):
         nodes = read_nodes_from_file(xml_file)
@@ -296,10 +403,10 @@ def get_objects_in_cropped_image(file_name: str,
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Crop the MUSCIMA++ images.')
     parser.add_argument('--images', dest='image_directory', type=str, help='Path to the images directory.',
-                        default="data/MUSCIMA++/v2.0/test_data/images")
+                        default="data/MUSCIMA++/v2.0/data/images")
     parser.add_argument('--annotations', dest='annotation_directory', type=str,
                         help='Path to the annotations directory.',
-                        default="data/MUSCIMA++/v2.0/test_data/annotations")
+                        default="data/MUSCIMA++/v2.0/data/annotations")
     # Defaults to parent directory of images
     parser.add_argument('--save_directory', dest='save_directory', type=str,
                         help='Directory, where to save the cropped images and annotations.')
@@ -315,7 +422,7 @@ if __name__ == "__main__":
         args.save_directory = os.path.dirname(args.image_directory) + "/" + args.method + "/"
 
     muscima_image_directory = os.path.join(args.image_directory, "*.png")
-    image_paths = glob(muscima_image_directory)[:1]
+    image_paths = glob(muscima_image_directory)
 
     annotations_dictionary = load_all_muscima_annotations(args.annotation_directory)
 
