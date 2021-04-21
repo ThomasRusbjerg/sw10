@@ -17,7 +17,6 @@ def cut_images(image_paths, annotations_dictionary, output_path: str,
                method: str):
     os.makedirs(output_path, exist_ok=True)
 
-    crop_annotations = []
     for image_path in tqdm(image_paths, desc=f"Cutting images and saving to {output_path}", total=len(image_paths)):
         image_name = os.path.basename(image_path)[:-4]  # cut away the extension .png
         image = Image.open(image_path, "r")  # type: Image.Image
@@ -34,103 +33,23 @@ def cut_images(image_paths, annotations_dictionary, output_path: str,
             # Image has annotated staff-lines, but does not have corresponding node annotations, so skip it
             continue
 
+        bboxes_to_crop_to = []
+
         if method == "staves":
-            crop_to_staves(image, objects_appearing_in_image, image_path,
-                           image_width, image_height, image_name, crop_annotations,
-                           output_path)
+            bboxes_to_crop_to = get_staff_bboxes(objects_appearing_in_image, image_path,
+                                                 image_width, image_height)
         elif method == "measures":
-            crop_to_measures(image, objects_appearing_in_image,
-                             image_name, crop_annotations, output_path)
+            bboxes_to_crop_to = get_measure_bboxes(image, objects_appearing_in_image)
 
+        # Crop to bounding boxes and save cropped images with annotations
+        for i, bbox in enumerate(bboxes_to_crop_to):
 
-def barlines_in_each_staff(barlines: List[Node]):
-    # Order barlines in correct order
-    first_barline_of_every_staff = []
+            file_name = f"{image_name}_{i+1}.png"
 
-    # todo: This may be wrong, it is possible for the second staff first barline to be closest
-    # The first barline is the one closest to the top left corner
-    node_top_left_corner = Node(0, "", 0, 0, 0, 0, document=barlines[0].document)
-    first_barline = sorted(barlines, key=lambda barline: barline.distance_to(node_top_left_corner))[0]
+            nodes_appearing_in_cropped_image =\
+                get_objects_in_cropped_image(bbox, objects_appearing_in_image)
 
-    # todo: This is flawed, barlines are not vertically aligned
-    # Add the rest of the leftmost barlines
-    first_barline_of_every_staff += list(filter(
-        lambda barline: abs(barline.left - first_barline.left < 10), barlines))
-
-    # Add barlines in the order from left to right for each leftmost barline
-    result = []
-    for leftmost_barline in first_barline_of_every_staff:
-        def same_height(barline): return abs(barline.top - leftmost_barline.top) < 10
-
-        barlines_at_this_height = list(filter(same_height, barlines))
-        result.append(sorted(barlines_at_this_height,
-                                   key=lambda barline: barline.distance_to(leftmost_barline)))
-    return result
-
-
-def crop_to_measures_old(image, objects_appearing_in_image,
-                     image_name, crop_annotations, output_path):
-    barlines = [x for x in objects_appearing_in_image if x.class_name == "staff"]
-    barlines.sort(key=lambda b: b.id)
-    for i, barline in enumerate(barlines):
-        print(barline.id)
-        from PIL import ImageDraw, ImageFont
-        image = image.convert('RGB')
-        imagedraw = ImageDraw.Draw(image)
-        fnt = ImageFont.truetype("Pillow/Tests/fonts/FreeMono.ttf", 40)
-        imagedraw.text((barline.left, barline.top), text=barline.id.__str__(), fill='red', font=fnt)
-        image.save(image_name + "bbox_test.png")
-    exit()
-
-    # If no barlines are in this image
-    if barlines is None:
-        return
-
-    # Barlines are read in no particular order, so get them for each staff
-    staves = barlines_in_each_staff(barlines)
-
-    # todo: Sometimes the barlines span ~5 staves, so take only one staff, one measure
-    #       But the same barline has to be used to crop different measures in different staves, then!
-    # todo: I wrongly assumed each staff starts with a barline - but many do not
-
-    # todo: Handle case where barlines basically touch (double barline)
-
-    vertical_padding = 120
-
-    # Go through each staff and crop to measure
-    for staff_index in range(len(staves)):
-        for barline_index in range(len(staves[staff_index])):
-            # If the last barline is reached, you're finished
-            if barline_index == len(staves[staff_index]) - 1:
-                break
-
-            left_barline = staves[staff_index][barline_index]
-            right_barline = staves[staff_index][barline_index + 1]
-
-            measure_bbox_tlbr = (left_barline.top - vertical_padding,
-                                 left_barline.left,
-                                 left_barline.bottom + vertical_padding,
-                                 right_barline.right)
-            measure_bbox_ltrb = (left_barline.left,
-                                 left_barline.top - vertical_padding,
-                                 right_barline.right,
-                                 left_barline.bottom + vertical_padding)
-
-            file_name = f"{image_name}_{staff_index+1}_{barline_index+1}.png"
-
-            objects_in_cropped_image, nodes_appearing_in_cropped_image = \
-                get_objects_in_cropped_image(file_name,
-                                             measure_bbox_tlbr,
-                                             objects_appearing_in_image)
-
-            cropped_image = image.crop(measure_bbox_ltrb).convert('RGB')
-
-            for object_in_cropped_image in objects_in_cropped_image:
-                file_name = object_in_cropped_image[0]
-                class_name = object_in_cropped_image[1]
-                translated_bounding_box = object_in_cropped_image[2]
-                trans_top, trans_left, trans_bottom, trans_right = translated_bounding_box
-                crop_annotations.append([file_name, trans_left, trans_top, trans_right, trans_bottom, class_name])
+            cropped_image = image.crop(bbox).convert('RGB')
 
             create_muscima_annotations(output_path + "annotations",
                                        file_name,
@@ -138,24 +57,11 @@ def crop_to_measures_old(image, objects_appearing_in_image,
 
             image_output_path = output_path + "images/"
             os.makedirs(image_output_path, exist_ok=True)
-
             output_file = os.path.join(image_output_path, file_name)
-            try:
-                cropped_image.save(output_file, "png")
-            except SystemError:
-                print(measure_bbox_ltrb)
-                print(image.height)
-                print(image.width)
-                from PIL import ImageDraw
-                image = image.convert('RGB')
-                imagedraw = ImageDraw.Draw(image)
-                imagedraw.rectangle(measure_bbox_ltrb, outline='red', width=3)
-                image.save(image_name + "bbox_test.png")
-                exit()
+            cropped_image.save(output_file, "png")
 
 
-def crop_to_measures(image, objects_appearing_in_image,
-                     image_name, crop_annotations, output_path):
+def get_measure_bboxes(image, objects_appearing_in_image):
     staves = [x for x in objects_appearing_in_image if x.class_name == "staff"]
     mss = [x for x in objects_appearing_in_image if x.class_name == "measureSeparator"]
 
@@ -163,6 +69,7 @@ def crop_to_measures(image, objects_appearing_in_image,
     if staves is None:
         return
 
+    # Number of pixels above and below each measure to include in cropped image
     vertical_padding = 120
 
     # Go through each staff and crop to measure
@@ -172,70 +79,25 @@ def crop_to_measures(image, objects_appearing_in_image,
         ms_in_staff = list(filter(lambda b: staff.overlaps(b), mss))
         ms_in_staff = sorted(ms_in_staff, key=lambda x: x.left)
         for measure_index, ms in enumerate(ms_in_staff):
-            # If end of staff is reached, go to next staff
+            # If end of staff is reached, go to next staff. 20 is arbitrary
             if abs(measure_begin - staff.right) < 20:
                 break
-            # todo: Check if the 0 and image.height works or not
-            measure_bbox_tlbr = (0 if staff_index == 0 else staff.top - vertical_padding,
-                                 measure_begin,
-                                 image.height if staff_index == len(staves) - 1 else staff.bottom + vertical_padding,
-                                 ms.right)
+            # First and last staff crops should include top and bottom of image, respectively
             measure_bbox_ltrb = (measure_begin,
                                  0 if staff_index == 0 else staff.top - vertical_padding,
                                  ms.right,
                                  image.height if staff_index == len(staves) - 1 else staff.bottom + vertical_padding)
 
-            # from PIL import 2ImageDraw
-            # image = image.convert('RGB')
-            # imagedraw = ImageDraw.Draw(image)
-            # imagedraw.rectangle(measure_bbox_ltrb, outline='red', width=3)
-            # image.save(image_name + "bbox_test.png")
+            measure_bboxes.append(measure_bbox_ltrb)
 
             # Next measure begins at the current measure separator
             measure_begin = ms.left
 
-            file_name = f"{image_name}_{staff_index+1}_{measure_index+1}.png"
-
-            objects_in_cropped_image, nodes_appearing_in_cropped_image = \
-                get_objects_in_cropped_image(file_name,
-                                             measure_bbox_tlbr,
-                                             objects_appearing_in_image)
-
-            cropped_image = image.crop(measure_bbox_ltrb).convert('RGB')
-
-            for object_in_cropped_image in objects_in_cropped_image:
-                file_name = object_in_cropped_image[0]
-                class_name = object_in_cropped_image[1]
-                translated_bounding_box = object_in_cropped_image[2]
-                trans_top, trans_left, trans_bottom, trans_right = translated_bounding_box
-                crop_annotations.append([file_name, trans_left, trans_top, trans_right, trans_bottom, class_name])
-
-            create_muscima_annotations(output_path + "annotations",
-                                       file_name,
-                                       nodes_appearing_in_cropped_image)
-
-            image_output_path = output_path + "images/"
-            os.makedirs(image_output_path, exist_ok=True)
-
-            output_file = os.path.join(image_output_path, file_name)
-
-            cropped_image.save(output_file, "png")
-            # try:
-            # except SystemError:
-            #     print(measure_bbox_ltrb)
-            #     print(image.height)
-            #     print(image.width)
-            #     from PIL import ImageDraw
-            #     image = image.convert('RGB')
-            #     imagedraw = ImageDraw.Draw(image)
-            #     imagedraw.rectangle(measure_bbox_ltrb, outline='red', width=3)
-            #     image.save(image_name + "bbox_test.png")
-            #     exit()
+    return measure_bboxes
 
 
-def crop_to_staves(image, objects_appearing_in_image, image_path,
-                   image_width, image_height, image_name, crop_annotations,
-                   output_path):
+def get_staff_bboxes(objects_appearing_in_image, image_path,
+                     image_width, image_height):
     staff_objects = [x for x in objects_appearing_in_image if x.class_name == "staff"]
     max_offset_before_first_and_after_last_staff = 120
 
@@ -248,7 +110,7 @@ def crop_to_staves(image, objects_appearing_in_image, image_path,
     last_bottom = min(staff_objects[len(staff_objects) - 1].bottom + max_offset_before_first_and_after_last_staff,
                       image_height)
 
-    output_image_counter = 1
+    staff_bboxes = []
     for staff_index in range(len(staff_objects)):
         staff = staff_objects[staff_index]
         if staff_index < len(staff_objects) - 1:
@@ -259,38 +121,14 @@ def crop_to_staves(image, objects_appearing_in_image, image_path,
         next_y_top = staff.bottom
         left_offset = 0
 
-        image_crop_bounding_box_left_top_bottom_right = (left_offset, top_offset, image_width, y_bottom)
-        image_crop_bounding_box_top_left_bottom_right = (top_offset, left_offset, y_bottom, image_width)
+        staff_bbox_ltrb = (left_offset, top_offset, image_width, y_bottom)
+        staff_bboxes.append(staff_bbox_ltrb)
 
-        file_name = "{0}_{1}.png".format(image_name, output_image_counter)
-        output_image_counter += 1
-
-        objects_in_cropped_image, nodes_appearing_in_cropped_image = \
-            get_objects_in_cropped_image(file_name,
-                                         image_crop_bounding_box_top_left_bottom_right,
-                                         objects_appearing_in_image)
-
-        cropped_image = image.crop(image_crop_bounding_box_left_top_bottom_right).convert('RGB')
-
-        for object_in_cropped_image in objects_in_cropped_image:
-            file_name = object_in_cropped_image[0]
-            class_name = object_in_cropped_image[1]
-            translated_bounding_box = object_in_cropped_image[2]
-            trans_top, trans_left, trans_bottom, trans_right = translated_bounding_box
-            crop_annotations.append([file_name, trans_left, trans_top, trans_right, trans_bottom, class_name])
-
-        create_muscima_annotations(output_path + "annotations",
-                                   file_name,
-                                   nodes_appearing_in_cropped_image)
-
-        image_output_path = output_path + "images/"
-        os.makedirs(image_output_path, exist_ok=True)
-
-        output_file = os.path.join(image_output_path, file_name)
-        cropped_image.save(output_file, "png")
+    return staff_bboxes
 
 
-# Does not create mask and outlink annotations
+# Does not create mask annotations
+# WARNING: This will create invalid Mung Graph structures
 def create_muscima_annotations(output_path: str,
                                file_name: str,
                                nodes_appearing_in_image: List[Node]):
@@ -317,9 +155,9 @@ def create_muscima_annotations(output_path: str,
         height.text = music_object.height.__str__()
 
         # Outlinks will not be correct because of cropping
-
-        # outlinks = SubElement(node, "Outlinks")
-        # outlinks.text = music_object.outlinks.__str__()[1:-1].replace(',', '')
+        # This causes invalid Mung Graph structure
+        outlinks = SubElement(node, "Outlinks")
+        outlinks.text = music_object.outlinks.__str__()[1:-1].replace(',', '')
 
     xml_file_path = os.path.join(output_path,
                                  os.path.splitext(file_name)[0] + ".xml")
@@ -358,25 +196,23 @@ def area(a):
     return (bottom - top) * (right - left)
 
 
-def get_objects_in_cropped_image(file_name: str,
-                                 image_crop_bounding_box_top_left_bottom_right: Tuple[int, int, int, int],
+def get_objects_in_cropped_image(image_crop_bbox_ltrb: Tuple[int, int, int, int],
                                  all_music_objects_appearing_in_image: List[Node],
                                  intersection_over_area_threshold_for_inclusion=0.8) \
-        -> Tuple[List[Tuple[str, str, Tuple[int, int, int, int]]], List[Node]]:
-    x_translation_for_cropped_image = image_crop_bounding_box_top_left_bottom_right[1]
-    y_translation_for_cropped_image = image_crop_bounding_box_top_left_bottom_right[0]
+        -> List[Node]:
+    x_translation_for_cropped_image = image_crop_bbox_ltrb[0]
+    y_translation_for_cropped_image = image_crop_bbox_ltrb[1]
 
-    objects_appearing_in_cropped_image: List[Tuple[str, str, Tuple[int, int, int, int]]] = []
     nodes_appearing_in_cropped_image: List[Node] = []
     for music_object in all_music_objects_appearing_in_image:
         if music_object.class_name in ["staff", "staff_line", "staff_space"]:
             continue
 
-        intersection_over_area = intersection(image_crop_bounding_box_top_left_bottom_right,
+        img_left, img_top, img_right, img_bottom = image_crop_bbox_ltrb
+        intersection_over_area = intersection([img_top, img_left, img_bottom, img_right],
                                               music_object.bounding_box) / area(music_object.bounding_box)
         if intersection_over_area > intersection_over_area_threshold_for_inclusion:
             top, left, bottom, right = music_object.bounding_box
-            img_top, img_left, img_bottom, img_right = image_crop_bounding_box_top_left_bottom_right
             img_width = img_right - img_left - 1
             img_height = img_bottom - img_top - 1
 
@@ -386,9 +222,6 @@ def get_objects_in_cropped_image(file_name: str,
                 min(img_height, bottom - y_translation_for_cropped_image),  # Bottom
                 min(img_width, right - x_translation_for_cropped_image))  # Right
 
-            objects_appearing_in_cropped_image.append((file_name,
-                                                       music_object.class_name,
-                                                       translated_bounding_box))
             nodes_appearing_in_cropped_image.append(
                 Node(music_object.id,
                      music_object.class_name,
@@ -397,7 +230,8 @@ def get_objects_in_cropped_image(file_name: str,
                      height=translated_bounding_box[2] - translated_bounding_box[0],
                      width=translated_bounding_box[3] - translated_bounding_box[1],
                      outlinks=music_object.outlinks))
-    return objects_appearing_in_cropped_image, nodes_appearing_in_cropped_image
+
+    return nodes_appearing_in_cropped_image
 
 
 if __name__ == "__main__":
