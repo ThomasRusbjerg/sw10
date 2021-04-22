@@ -3,6 +3,7 @@ import os
 import argparse
 from glob import glob
 from typing import Tuple, List, Dict
+import numpy as np
 
 from PIL import Image
 from tqdm import tqdm
@@ -45,6 +46,7 @@ def cut_images(image_paths, annotations_dictionary, output_path: str,
 
             output_file_name = f"{file_name}_{i+1}"
 
+            print(output_file_name)
             nodes_appearing_in_cropped_image =\
                 get_objects_in_cropped_image(bbox, objects_appearing_in_image)
 
@@ -126,8 +128,6 @@ def get_staff_bboxes(objects_appearing_in_image, image_path,
     return staff_bboxes
 
 
-# Does not create mask annotations
-# WARNING: This will create invalid Mung Graph structures
 def create_muscima_annotations(output_path: str,
                                output_file_name: str,
                                nodes_appearing_in_image: List[Node]):
@@ -150,6 +150,9 @@ def create_muscima_annotations(output_path: str,
         width.text = music_object.width.__str__()
         height = SubElement(node, "Height")
         height.text = music_object.height.__str__()
+
+        mask = SubElement(node, "Mask")
+        mask.text = music_object.mask.__str__()
 
         outlinks = SubElement(node, "Outlinks")
         # Only get outlinks to nodes that are in this image
@@ -195,14 +198,13 @@ def area(a):
 
 
 def get_objects_in_cropped_image(image_crop_bbox_ltrb: Tuple[int, int, int, int],
-                                 all_music_objects_appearing_in_image: List[Node],
-                                 intersection_over_area_threshold_for_inclusion=0.8) \
-        -> List[Node]:
+                                 all_objects_in_image: List[Node],
+                                 intersection_over_area_threshold_for_inclusion=0.8) -> List[Node]:
     x_translation_for_cropped_image = image_crop_bbox_ltrb[0]
     y_translation_for_cropped_image = image_crop_bbox_ltrb[1]
 
     nodes_appearing_in_cropped_image: List[Node] = []
-    for music_object in all_music_objects_appearing_in_image:
+    for music_object in all_objects_in_image:
         if music_object.class_name in ["staff", "staff_line", "staff_space"]:
             continue
 
@@ -219,7 +221,20 @@ def get_objects_in_cropped_image(image_crop_bbox_ltrb: Tuple[int, int, int, int]
                 max(0, left - x_translation_for_cropped_image),  # Left
                 min(img_height, bottom - y_translation_for_cropped_image),  # Bottom
                 min(img_width, right - x_translation_for_cropped_image))  # Right
-
+            # Check if image crop crosses mask
+            new_mask = music_object.mask
+            t, l, b, r = Node.round_bounding_box_to_integer(*translated_bounding_box)
+            if music_object.mask.shape != (b - t, r - l):
+                if (pixel_diff := music_object.mask.shape[0] - (b - t)) != 0:
+                    print(music_object.class_name)
+                    print(pixel_diff)
+                    print("we do something")
+                    new_mask = np.delete(music_object.mask, np.s_[-pixel_diff:], axis=0)
+                elif (pixel_diff := music_object.mask.shape[1] - (r - l)) != 0:
+                    print(music_object.class_name)
+                    print(pixel_diff)
+                    print("something else")
+                    new_mask = np.delete(music_object.mask, np.s_[-pixel_diff:], axis=1)
             nodes_appearing_in_cropped_image.append(
                 Node(music_object.id,
                      music_object.class_name,
@@ -227,6 +242,7 @@ def get_objects_in_cropped_image(image_crop_bbox_ltrb: Tuple[int, int, int, int]
                      left=translated_bounding_box[1],
                      height=translated_bounding_box[2] - translated_bounding_box[0],
                      width=translated_bounding_box[3] - translated_bounding_box[1],
+                     mask=new_mask,
                      outlinks=music_object.outlinks))
 
     return nodes_appearing_in_cropped_image
