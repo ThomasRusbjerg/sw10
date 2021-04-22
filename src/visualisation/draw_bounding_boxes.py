@@ -12,6 +12,7 @@ import argparse
 from PIL import ImageColor
 from mung.io import read_nodes_from_file
 from tqdm import tqdm
+from typing import List
 
 from src.data_handling.detectron2_muscima import get_muscima_classid_mapping
 
@@ -45,8 +46,9 @@ STANDARD_COLORS = [
 def draw_bounding_boxes_into_image(image_path: str,
                                    ground_truth_annotations_path: str,
                                    destination_path: str,
-                                   classes_mapping : dict,
-                                   classes):
+                                   classes_mapping: dict,
+                                   classes: List[str],
+                                   draw_links: bool):
     music_objects = read_nodes_from_file(ground_truth_annotations_path)
     img = cv2.imread(image_path)
     for index, music_object in enumerate(music_objects):
@@ -67,12 +69,17 @@ def draw_bounding_boxes_into_image(image_path: str,
                     text=music_object.class_name + '/' + str(index + 1),
                     org=(x1, y1), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1,
                     color=color, thickness=1)
+        if draw_links:
+            # Draw links to connected nodes
+            connected_nodes = list(filter(lambda node: node.id in music_object.outlinks, music_objects))
+            for node in connected_nodes:
+                cv2.line(img, tuple(reversed(music_object.middle)), tuple(reversed(node.middle)), color=color, thickness=2)
     cv2.imwrite(destination_path, img)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Draw the bounding boxes from the ground-truth data.')
-    parser.add_argument('--image', dest='image', type=str, help='Path to the image (file or directory).',
+    parser.add_argument('--images', dest='image', type=str, help='Path to the image (file or directory).',
                         default="data/MUSCIMA++/v2.0/data/images")
     parser.add_argument('--annotations', dest='annotations', type=str,
                         help='Path to the annotations (file or directory).',
@@ -84,11 +91,12 @@ if __name__ == "__main__":
                         default="data/MUSCIMA++/v2.0/mapping_all_classes.json",
                         help='Path to the label map, which is json-file that'
                              'maps each category name to a unique number.')
-    parser.add_argument('-c', '--classes', dest='classes', action='append',
-                        default=[],
+    parser.add_argument('-c', '--classes', dest='classes', action='append', default=[],
                         help="The classes to draw bboxes for."
                              "For each class, supply to new -c argument,"
                              "e.g. \"-c noteheadFull -c barline\"")
+    parser.add_argument('-l', '--links', dest='draw_links', type=bool, default=True,
+                        help="Whether or not to draw links between connected nodes")
 
     args = parser.parse_args()
 
@@ -123,4 +131,4 @@ if __name__ == "__main__":
             total=len(output_files),
             desc="Drawing annotations"):
         draw_bounding_boxes_into_image(image, annotation, output,
-                                       classes_mapping, args.classes)
+                                       classes_mapping, args.classes, args.draw_links)

@@ -1,7 +1,6 @@
 # Source: https://github.com/apacha/MusicObjectDetector-TF/blob/master/MusicObjectDetector/prepare_muscima_stavewise_annotations.py
 import os
 import argparse
-import shutil
 from glob import glob
 from typing import Tuple, List, Dict
 
@@ -18,14 +17,14 @@ def cut_images(image_paths, annotations_dictionary, output_path: str,
     os.makedirs(output_path, exist_ok=True)
 
     for image_path in tqdm(image_paths, desc=f"Cutting images and saving to {output_path}", total=len(image_paths)):
-        image_name = os.path.basename(image_path)[:-4]  # cut away the extension .png
+        file_name = os.path.basename(image_path)[:-4]  # cut away the extension .png
         image = Image.open(image_path, "r")  # type: Image.Image
         image_width = image.width
         image_height = image.height
         objects_appearing_in_image: List[Node] = None
 
         for document, nodes in annotations_dictionary.items():
-            if image_name in document:
+            if file_name in document:
                 objects_appearing_in_image = nodes
                 break
 
@@ -44,7 +43,7 @@ def cut_images(image_paths, annotations_dictionary, output_path: str,
         # Crop to bounding boxes and save cropped images with annotations
         for i, bbox in enumerate(bboxes_to_crop_to):
 
-            file_name = f"{image_name}_{i+1}.png"
+            output_file_name = f"{file_name}_{i+1}"
 
             nodes_appearing_in_cropped_image =\
                 get_objects_in_cropped_image(bbox, objects_appearing_in_image)
@@ -52,12 +51,12 @@ def cut_images(image_paths, annotations_dictionary, output_path: str,
             cropped_image = image.crop(bbox).convert('RGB')
 
             create_muscima_annotations(output_path + "annotations",
-                                       file_name,
+                                       output_file_name,
                                        nodes_appearing_in_cropped_image)
 
             image_output_path = output_path + "images/"
             os.makedirs(image_output_path, exist_ok=True)
-            output_file = os.path.join(image_output_path, file_name)
+            output_file = os.path.join(image_output_path, output_file_name + ".png")
             cropped_image.save(output_file, "png")
 
 
@@ -130,15 +129,13 @@ def get_staff_bboxes(objects_appearing_in_image, image_path,
 # Does not create mask annotations
 # WARNING: This will create invalid Mung Graph structures
 def create_muscima_annotations(output_path: str,
-                               file_name: str,
+                               output_file_name: str,
                                nodes_appearing_in_image: List[Node]):
     os.makedirs(output_path, exist_ok=True)
 
-    file_name = os.path.basename(file_name)[:-4]  # cut away the extension .png
-
     nodes = Element("Nodes",
                     dataset="MUSCIMA-pp_2.0",
-                    document=file_name)
+                    document=output_file_name)
     for music_object in nodes_appearing_in_image:
         node = SubElement(nodes, "Node")
         identifier = SubElement(node, "Id")
@@ -154,13 +151,14 @@ def create_muscima_annotations(output_path: str,
         height = SubElement(node, "Height")
         height.text = music_object.height.__str__()
 
-        # Outlinks will not be correct because of cropping
-        # This causes invalid Mung Graph structure
         outlinks = SubElement(node, "Outlinks")
-        outlinks.text = music_object.outlinks.__str__()[1:-1].replace(',', '')
+        # Only get outlinks to nodes that are in this image
+        ids_of_nodes_in_this_image = [node.id for node in nodes_appearing_in_image]
+        valid_outlinks = list(set(music_object.outlinks).intersection(ids_of_nodes_in_this_image))
+        outlinks.text = valid_outlinks.__str__()[1:-1].replace(',', '')
 
     xml_file_path = os.path.join(output_path,
-                                 os.path.splitext(file_name)[0] + ".xml")
+                                 os.path.splitext(output_file_name)[0] + ".xml")
     pretty_xml_string = tostring(nodes, pretty_print=True)
 
     with open(xml_file_path, "wb") as xml_file:
