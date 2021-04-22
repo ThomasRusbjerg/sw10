@@ -4,6 +4,7 @@ import cv2
 import os
 
 
+# source: https://gist.github.com/jdhao/9a86d4b9e4f79c5330d54de991461fd6
 def calculate_pixel_mean_std(image_folder):
     channel_num = 3
 
