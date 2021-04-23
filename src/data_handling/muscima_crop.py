@@ -128,7 +128,6 @@ def get_staff_bboxes(objects_appearing_in_image, image_path,
     return staff_bboxes
 
 
-# Does not create mask annotations
 def create_muscima_annotations(output_path: str,
                                output_file_name: str,
                                nodes_appearing_in_image: List[Node]):
@@ -153,7 +152,7 @@ def create_muscima_annotations(output_path: str,
         height.text = music_object.height.__str__()
 
         mask = SubElement(node, "Mask")
-        mask.text = music_object.mask.__str__()
+        mask.text = Node.encode_mask_rle(music_object.mask)
 
         outlinks = SubElement(node, "Outlinks")
         # Only get outlinks to nodes that are in this image
@@ -245,7 +244,6 @@ def get_objects_in_cropped_image(image_crop_bbox_ltrb: Tuple[int, int, int, int]
                      width=translated_bounding_box[3] - translated_bounding_box[1],
                      mask=new_mask,
                      outlinks=music_object.outlinks))
-
     return nodes_appearing_in_cropped_image
 
 
