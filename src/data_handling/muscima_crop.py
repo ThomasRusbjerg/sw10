@@ -18,7 +18,8 @@ def cut_images(image_paths, annotations_dictionary, output_path: str,
     os.makedirs(output_path, exist_ok=True)
 
     for image_path in tqdm(image_paths, desc=f"Cutting images and saving to {output_path}", total=len(image_paths)):
-        file_name = os.path.splitext(image_path)[0]  # cut away the file extension
+        file_path = os.path.splitext(image_path)[0]  # cut away the file extension
+        file_name = os.path.basename(file_path)
         image = Image.open(image_path, "r")  # type: Image.Image
         image_width = image.width
         image_height = image.height
@@ -46,7 +47,7 @@ def cut_images(image_paths, annotations_dictionary, output_path: str,
 
             output_file_name = f"{file_name}_{i+1}"
 
-            nodes_appearing_in_cropped_image =\
+            nodes_appearing_in_cropped_image = \
                 get_objects_in_cropped_image(bbox, objects_appearing_in_image)
 
             cropped_image = image.crop(bbox).convert('RGB')
@@ -221,20 +222,20 @@ def get_objects_in_cropped_image(image_crop_bbox_ltrb: Tuple[int, int, int, int]
                 max(0, left - x_translation_for_cropped_image),  # Left
                 min(img_height, bottom - y_translation_for_cropped_image),  # Bottom
                 min(img_width, right - x_translation_for_cropped_image))  # Right
-            # Check if image crop crosses mask
+
+            # Check if image crop cuts off a mask
             new_mask = music_object.mask
             t, l, b, r = Node.round_bounding_box_to_integer(*translated_bounding_box)
-            if music_object.mask.shape != (b - t, r - l):
-                if (pixel_diff := music_object.mask.shape[0] - (b - t)) != 0:
-                    print(music_object.class_name)
-                    print(pixel_diff)
-                    print("we do something")
-                    new_mask = np.delete(music_object.mask, np.s_[-pixel_diff:], axis=0)
-                elif (pixel_diff := music_object.mask.shape[1] - (r - l)) != 0:
-                    print(music_object.class_name)
-                    print(pixel_diff)
-                    print("something else")
-                    new_mask = np.delete(music_object.mask, np.s_[-pixel_diff:], axis=1)
+            # If a number of pixels has been cut off the bottom of the mask,
+            # remove that many pixels off the bottom
+            pixel_diff_y = new_mask.shape[0] - (b - t)
+            if pixel_diff_y > 0:
+                new_mask = np.delete(new_mask, np.s_[-pixel_diff_y:], axis=0)
+            # Same for right side of the mask
+            pixel_diff_x = new_mask.shape[1] - (r - l)
+            if pixel_diff_x > 0:
+                new_mask = np.delete(new_mask, np.s_[-pixel_diff_x:], axis=1)
+
             nodes_appearing_in_cropped_image.append(
                 Node(music_object.id,
                      music_object.class_name,
