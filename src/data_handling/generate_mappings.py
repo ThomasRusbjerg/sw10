@@ -12,22 +12,19 @@ import argparse
 from mung.io import read_nodes_from_file
 from tqdm import tqdm
 
-def image_mappings():
+
+def image_mappings(images_dir, output_path):
     img_mappings = []
-    for i, img in enumerate(os.listdir("data/MUSCIMA++/v2.0/data/images")):
+    for i, img in enumerate(os.listdir(images_dir)):
         img_name = img[:-4]
         img_mappings.append({"name": img_name, "id": i})
-    with open('data/MUSCIMA++/v2.0/mapping_img.json', 'w') as f:
+    with open(output_path + 'mapping_img.json', 'w') as f:
         json.dump(img_mappings, f)
 
-def class_mappings():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_dir", default="data/MUSCIMA++/v2.0/data/annotations/")
-    parser.add_argument("--mapping_output_path", default="mapping_all_classes.json")
-    parser.add_argument("--remove_line_shaped_or_construct", type=bool, default=False)
-    args = parser.parse_args()
 
-    names = glob.glob(os.path.join(args.dataset_dir, "*.xml"))
+def class_mappings(annotations_dir, output_path):
+
+    names = glob.glob(os.path.join(annotations_dir, "*.xml"))
     data = {}
 
     for name in tqdm(names, desc="Reading all objects from MUSCIMA++ annotations"):
@@ -73,7 +70,7 @@ def class_mappings():
         else:
             filtered_class_id.append(key)
     filtered_class_id.sort()
-    with open(args.mapping_output_path, "w") as f:
+    with open(output_path + "mapping_all_classes.json", "w") as f:
         f.write("[")
         for i, classname in enumerate(filtered_class_id):
             f.write("""{{
@@ -82,6 +79,17 @@ def class_mappings():
 }}, 
 """.format(i + 1, classname))
         f.write("]")
+    print("Remember to remove last comma in class mappings json file!")
+
 
 if __name__ == "__main__":
-    image_mappings()
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--images", default="data/MUSCIMA++/v2.0/data/images/")
+    parser.add_argument("--annotations", default="data/MUSCIMA++/v2.0/data/annotations/")
+    parser.add_argument("--output_path", default="data/MUSCIMA++/v2.0/")
+    parser.add_argument("--remove_line_shaped_or_construct", type=bool, default=False)
+    args = parser.parse_args()
+
+    image_mappings(args.images, args.output_path)
+    class_mappings(args.annotations, args.output_path)
