@@ -18,9 +18,7 @@ def calculate_pixel_mean_std(image_file_names, channel_num=3):
 
     for f in tqdm(image_file_names, total=len(image_file_names),
                   desc="Calculating pixel mean and std of images"):
-        im = cv2.imread(f)  # image in M*N*CHANNEL_NUM shape, channel in BGR order
-        # im = im / 255.0
-        im = im / 1.0
+        im = cv2.imread(f).astype(np.float)  # image in M*N*CHANNEL_NUM shape, channel in BGR order
         pixel_num += (im.size / channel_num)
         channel_sum += np.sum(im, axis=(0, 1))
         channel_sum_squared += np.sum(np.square(im), axis=(0, 1))

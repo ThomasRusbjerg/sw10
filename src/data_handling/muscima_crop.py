@@ -17,7 +17,7 @@ def cut_images(image_paths, annotations_dictionary, output_path: str,
     os.makedirs(output_path, exist_ok=True)
 
     for image_path in tqdm(image_paths, desc=f"Cutting images and saving to {output_path}", total=len(image_paths)):
-        file_name = os.path.basename(image_path)[:-4]  # cut away the extension .png
+        file_name = os.path.splitext(image_path)[0]  # cut away the file extension
         image = Image.open(image_path, "r")  # type: Image.Image
         image_width = image.width
         image_height = image.height
@@ -127,7 +127,6 @@ def get_staff_bboxes(objects_appearing_in_image, image_path,
 
 
 # Does not create mask annotations
-# WARNING: This will create invalid Mung Graph structures
 def create_muscima_annotations(output_path: str,
                                output_file_name: str,
                                nodes_appearing_in_image: List[Node]):
