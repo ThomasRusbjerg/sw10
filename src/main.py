@@ -48,7 +48,8 @@ def main():
     # training_split_file_path = "data/training_validation_test/training.txt"
     # val_split_file_path = "data/training_validation_test/validation.txt"
     # test_split_file_path = "data/training_validation_test/test.txt"
-    # create_muscima_detectron_dataset(training_split_file_path)
+    # create_muscima_detectron_dataset(val_split_file_path)
+    # exit()
 
     # Register datasets in detectron
     for dataset in ["training", "validation"]:
@@ -68,10 +69,10 @@ def main():
         args, "config_file", "src/models/detr/configs/detr_256_6_6_torchvision.yaml"
     )
     setattr(args, "num_gpus", 1)
-    # setattr(args, "opts", ['MODEL.WEIGHTS', 'models/model_final.pth'])
-    cfg = detr_train.setup(args)
 
     # Predict and visualise
+    # setattr(args, "opts", ['MODEL.WEIGHTS', 'models/model_final.pth'])
+    cfg = detr_train.setup(args)
     # muscima_metadata = MetadataCatalog.get("muscima_validation")
     # data = load_muscima_detectron_dataset("data/validation.pickle")
     # visualise(cfg, data, muscima_metadata, 1)

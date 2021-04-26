@@ -89,12 +89,19 @@ def create_muscima_detectron_dataset(split_location):
         img_id = list(filter(lambda img: img['name'] == img_name, img_id_mapping))[0]['id']
         height = images[i].shape[0]
         width = images[i].shape[1]
+
+        # Convert ajacency list to matrix
+        largest_id = np.max([v.id for v in mung.vertices])
+        adj_matrix = np.zeros((largest_id+1, largest_id+1))
+        for edge in mung.edges:
+            adj_matrix[edge] = 1
         img_instance = {
             "file_name": images_root + "/" + img_name + ".png",
             "height": height,
             "width": width,
             "image_id": img_id,
             "annotations": [],
+            "mung_links": adj_matrix
         }
         for annotation in mung.vertices:
             # Convert bbox mask to image mask
@@ -113,6 +120,7 @@ def create_muscima_detectron_dataset(split_location):
                     "bbox_mode": BoxMode.XYXY_ABS,
                     "category_id": classes[annotation.class_name] -1, # -1 since ids start at 1
                     "segmentation": segmentations,
+                    "object_id": annotation.id
                 }
             )
         dataset.append(img_instance)

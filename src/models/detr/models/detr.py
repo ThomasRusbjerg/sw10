@@ -36,6 +36,7 @@ class DETR(nn.Module):
         hidden_dim = transformer.d_model
         self.class_embed = nn.Linear(hidden_dim, num_classes + 1)
         self.bbox_embed = MLP(hidden_dim, hidden_dim, 4, 3)
+        self.relation_embed = nn.Linear(hidden_dim, hidden_dim)
         self.query_embed = nn.Embedding(num_queries, hidden_dim)
         self.input_proj = nn.Conv2d(backbone.num_channels, hidden_dim, kernel_size=1)
         self.backbone = backbone
@@ -62,11 +63,14 @@ class DETR(nn.Module):
 
         src, mask = features[-1].decompose()
         assert mask is not None
-        hs = self.transformer(self.input_proj(src), mask, self.query_embed.weight, pos[-1])[0]
-
+        hs = self.transformer(self.input_proj(src), mask, self.query_embed.weight, pos[-1])[0][-1]
+        temp = self.transformer.decoder.layers[-1].self_attn
         outputs_class = self.class_embed(hs)
         outputs_coord = self.bbox_embed(hs).sigmoid()
-        out = {'pred_logits': outputs_class[-1], 'pred_boxes': outputs_coord[-1]}
+        relation_embeds = self.relation_embed(hs)
+        output_relations = torch.bmm(relation_embeds, torch.transpose(relation_embeds, 1, 2)).sigmoid()
+
+        out = {'pred_logits': outputs_class, 'pred_boxes': outputs_coord, 'pred_relations': output_relations}
         if self.aux_loss:
             out['aux_outputs'] = self._set_aux_loss(outputs_class, outputs_coord)
         return out
@@ -161,6 +165,35 @@ class SetCriterion(nn.Module):
         losses['loss_giou'] = loss_giou.sum() / num_boxes
         return losses
 
+    def loss_relations(self, outputs, targets, indices, num_boxes):
+        """Compute the losses related to the relations between objects.
+        """
+        assert 'pred_relations' in outputs
+
+        target_ids = torch.cat([t['mung_ids'][i] for t, (_, i) in zip(targets, indices)], dim=0)
+        src_relations = outputs['pred_relations']
+        target_relations = [t['relations'] for t in targets]
+        _, row, col = src_relations.shape
+        pred = []
+        label = []
+        for gt_relations in target_relations:
+            for i in range(0, row-1):
+                for j in range(0, col-1):
+                    pred_relation = src_relations[:, i, j]
+                    pred.append(pred_relation)
+
+                    id_a = target_ids[i]
+                    id_b = target_ids[j]
+                    gt_relation = gt_relations[0][id_a, id_b]
+                    label.append(gt_relation)
+        pred = torch.as_tensor(pred, dtype=float, device=target_ids.device)
+        label = torch.as_tensor(label, dtype=float, device=target_ids.device)
+
+        losses = {
+            "loss_relations": nn.functional.binary_cross_entropy(pred, label)
+        }
+        return losses
+
     def loss_masks(self, outputs, targets, indices, num_boxes):
         """Compute the losses related to the masks: the focal loss and the dice loss.
            targets dicts must contain the key "masks" containing a tensor of dim [nb_target_boxes, h, w]
@@ -207,6 +240,7 @@ class SetCriterion(nn.Module):
             'labels': self.loss_labels,
             'cardinality': self.loss_cardinality,
             'boxes': self.loss_boxes,
+            'relations': self.loss_relations,
             'masks': self.loss_masks
         }
         assert loss in loss_map, f'do you really want to compute {loss} loss?'
@@ -343,7 +377,7 @@ def build(args):
             aux_weight_dict.update({k + f'_{i}': v for k, v in weight_dict.items()})
         weight_dict.update(aux_weight_dict)
 
-    losses = ['labels', 'boxes', 'cardinality']
+    losses = ["labels", "boxes", "cardinality", "relations"]
     if args.masks:
         losses += ["masks"]
     criterion = SetCriterion(num_classes, matcher=matcher, weight_dict=weight_dict,

@@ -118,5 +118,7 @@ class DetrDatasetMapper:
                 if obj.get("iscrowd", 0) == 0
             ]
             instances = utils.annotations_to_instances(annos, image_shape)
-            dataset_dict["instances"] = utils.filter_empty_instances(instances)
+            # This function filters out "empty instances" which includes small bboxes
+            # dataset_dict["instances"] = utils.filter_empty_instances(instances)
+            dataset_dict["instances"] = instances
         return dataset_dict
