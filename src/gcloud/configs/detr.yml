@@ -1,0 +1,26 @@
+trainingInput:
+  scaleTier: CUSTOM
+  masterType: n1-highmem-4
+  masterConfig:
+    acceleratorConfig:
+      type: nvidia-tesla-k80
+      count: 1
+  # hyperparameters:
+  #   goal: MINIMIZE
+  #   hyperparameterMetricTag: val_loss
+  #   maxTrials: 5
+  #   # resumePreviousJobId: idgoeshere
+  #   maxParallelTrials: 1
+  #   enableTrialEarlyStopping: True
+  #   params:
+  #     - parameterName: epochs
+  #       type: DISCRETE
+  #       discreteValues:
+  #         - 5
+  #         - 10
+  #     - parameterName: batch_size
+  #       type: DISCRETE
+  #       discreteValues:
+  #         - 10
+  #         - 15
+  #         - 30

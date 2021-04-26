@@ -7,7 +7,7 @@ import numpy as np
 from tensorflow import keras
 from datetime import date, datetime
 
-import gs_utils
+from gcloud import gs_utils
 
 def _parse_args(argv):
     """ Parses command-line arguments. """
@@ -18,7 +18,7 @@ def _parse_args(argv):
         help='Output directory for exporting model and other metadata.',
         required=False,
         type=str,
-        default="gs://sw10/omr/jobs/" + date.today().strftime("%Y%m%d") + "-" + datetime.now().strftime("%H%M%S") + "/1"
+        default="gs://sw10-bucket/omr/jobs/" + date.today().strftime("%Y%m%d") + "-" + datetime.now().strftime("%H%M%S") + "/1"
     )
 
     parser.add_argument(
