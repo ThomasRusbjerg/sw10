@@ -198,7 +198,6 @@ class Detr(nn.Module):
         if self.training:
             gt_instances = [x["instances"].to(self.device) for x in batched_inputs]
             gt_mung_links = [torch.as_tensor(x["mung_links"], dtype=torch.int, device=self.device) for x in batched_inputs]
-
             targets = self.prepare_targets(gt_instances, gt_mung_links)
             loss_dict = self.criterion(output, targets)
             weight_dict = self.criterion.weight_dict
