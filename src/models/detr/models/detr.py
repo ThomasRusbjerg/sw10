@@ -169,28 +169,28 @@ class SetCriterion(nn.Module):
         """Compute the losses related to the relations between objects.
         """
         assert 'pred_relations' in outputs
-
         target_ids = torch.cat([t['mung_ids'][i] for t, (_, i) in zip(targets, indices)], dim=0)
         src_relations = outputs['pred_relations']
-        target_relations = [t['relations'] for t in targets]
+        target_relations = targets[0]["relations"]
+
         _, row, col = src_relations.shape
         pred = []
         label = []
-        for gt_relations in target_relations:
-            for i in range(0, row-1):
-                for j in range(0, col-1):
-                    pred_relation = src_relations[:, i, j]
+        for batch, gt_relations in enumerate(target_relations):
+            for r in range(0, row):
+                for c in range(0, col):
+                    pred_relation = src_relations[batch, r, c]
                     pred.append(pred_relation)
-
-                    id_a = target_ids[i]
-                    id_b = target_ids[j]
-                    gt_relation = gt_relations[0][id_a, id_b]
+                    offset = batch * row
+                    id_a = target_ids[offset + r]
+                    id_b = target_ids[offset + c]
+                    gt_relation = gt_relations[id_a, id_b]
                     label.append(gt_relation)
         pred = torch.as_tensor(pred, dtype=float, device=target_ids.device)
         label = torch.as_tensor(label, dtype=float, device=target_ids.device)
 
         losses = {
-            "loss_relations": nn.functional.binary_cross_entropy(pred, label)
+            "loss_relations": F.binary_cross_entropy(pred, label)
         }
         return losses
 
@@ -254,6 +254,7 @@ class SetCriterion(nn.Module):
                       The expected keys in each dict depends on the losses applied, see each loss' doc
         """
         outputs_without_aux = {k: v for k, v in outputs.items() if k != 'aux_outputs'}
+        del outputs_without_aux['pred_relations']
 
         # Retrieve the matching between the outputs of the last layer and the targets
         indices = self.matcher(outputs_without_aux, targets)
