@@ -170,6 +170,7 @@ class SetCriterion(nn.Module):
         """
         assert 'pred_relations' in outputs
         target_ids = torch.cat([t['mung_ids'][i] for t, (_, i) in zip(targets, indices)], dim=0)
+        # target_ids = [t['mung_ids'] for t in targets]
         src_relations = outputs['pred_relations']
         target_relations = targets[0]["relations"]
 
