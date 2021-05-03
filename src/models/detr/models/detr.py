@@ -2,10 +2,10 @@
 """
 DETR model and criterion classes.
 """
+import itertools
 import torch
 import torch.nn.functional as F
 from torch import nn
-
 from models.detr.util import box_ops
 from models.detr.util.misc import (NestedTensor, nested_tensor_from_tensor_list,
                        accuracy, get_world_size, interpolate,
@@ -64,7 +64,6 @@ class DETR(nn.Module):
         src, mask = features[-1].decompose()
         assert mask is not None
         hs = self.transformer(self.input_proj(src), mask, self.query_embed.weight, pos[-1])[0][-1]
-        temp = self.transformer.decoder.layers[-1].self_attn
         outputs_class = self.class_embed(hs)
         outputs_coord = self.bbox_embed(hs).sigmoid()
         relation_embeds = self.relation_embed(hs)
@@ -169,26 +168,63 @@ class SetCriterion(nn.Module):
         """Compute the losses related to the relations between objects.
         """
         assert 'pred_relations' in outputs
-        target_ids = torch.cat([t['mung_ids'][i] for t, (_, i) in zip(targets, indices)], dim=0)
-        # target_ids = [t['mung_ids'] for t in targets]
-        src_relations = outputs['pred_relations']
-        target_relations = targets[0]["relations"]
+        # src_ids = torch.cat([t['mung_ids'][i] for t, (i, _) in zip(targets, indices)], dim=0)
+        # target_ids = torch.cat([t['mung_ids'][i] for t, (_, i) in zip(targets, indices)], dim=0)
+        # source_ids = [t['mung_ids'][i] for t, (i, _) in zip(targets, indices)]
+        source_idx = [i for _, (i, _) in zip(targets, indices)]
 
-        _, row, col = src_relations.shape
+        target_ids = [t['mung_ids'][i] for t, (_, i) in zip(targets, indices)]
+
+        # target_idx = [i for _, (_, i) in zip(targets, indices)]
+
+        # relations_to_check = torch.cartesian_prod(src_ids[0], target_ids[0])
+        # a = indices[0][0]
+        # b = indices[0][1]
+
+        target_relations = targets[0]["relations"]
+        pred_relations = outputs['pred_relations']
+        # src_batch, src_idx = self._get_src_permutation_idx(indices)
+        # tgt_batch, tgt_idx = self._get_tgt_permutation_idx(indices)
+        # src_relations_x = outputs['pred_relations'][src_batch, src_idx, :]
+        # src_relations_y = outputs['pred_relations'][src_batch, :, src_idx]
+        # tgt_relations_x = target_relations[tgt_idx, :]
+        # tgt_relations_y = target_relations[:, tgt_idx]
+
         pred = []
         label = []
-        for batch, gt_relations in enumerate(target_relations):
-            for r in range(0, row):
-                for c in range(0, col):
-                    pred_relation = src_relations[batch, r, c]
-                    pred.append(pred_relation)
-                    offset = batch * row
-                    id_a = target_ids[offset + r]
-                    id_b = target_ids[offset + c]
-                    gt_relation = gt_relations[id_a, id_b]
-                    label.append(gt_relation)
-        pred = torch.as_tensor(pred, dtype=float, device=target_ids.device)
-        label = torch.as_tensor(label, dtype=float, device=target_ids.device)
+        for batch in range(len(indices)):
+            source_idx = indices[batch][0]
+            ids_to_idx = dict(zip(target_ids[batch].tolist(), source_idx.tolist()))
+            # target_idx = indices[batch][1]
+            gt_relations_to_check = torch.cartesian_prod(target_ids[batch], target_ids[batch])
+            for (src_id, tgt_id) in gt_relations_to_check:
+                src_id = src_id.item()
+                tgt_id = tgt_id.item()
+                label.append(target_relations[batch][src_id, tgt_id])
+                label.append(target_relations[batch][tgt_id, src_id])
+                pred_idx_src = ids_to_idx[src_id]
+                pred_idx_tgt = ids_to_idx[tgt_id]
+                pred.append(pred_relations[batch, pred_idx_src, pred_idx_tgt])
+                pred.append(pred_relations[batch, pred_idx_tgt, pred_idx_src])
+
+
+            # pred_relations = pred_relations[batch, :, :]
+
+            # for (src_id, tgt_id) in pred_relations_to_check:
+            #     pred.append(pred_relations[src_id, tgt_id])
+            #     pred.append(pred_relations[tgt_id, src_id])
+
+            # for r in range(0, row):
+            #     for c in range(0, col):
+            #         pred_relation = src_relations[batch, r, c]
+            #         pred.append(pred_relation)
+            #         offset = batch * row
+            #         id_a = target_ids[offset + r]
+            #         id_b = target_ids[offset + c]
+            #         gt_relation = gt_relations[id_a, id_b]
+            #         label.append(gt_relation)
+        pred = torch.as_tensor(pred, dtype=float, device=pred_relations.device)
+        label = torch.as_tensor(label, dtype=float, device=pred_relations.device)
 
         losses = {
             "loss_relations": F.binary_cross_entropy(pred, label)
