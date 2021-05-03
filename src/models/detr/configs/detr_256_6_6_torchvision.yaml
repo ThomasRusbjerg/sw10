@@ -1,8 +1,8 @@
 MODEL:
   META_ARCHITECTURE: "Detr"
   WEIGHTS: "detectron2://ImageNetPretrained/torchvision/R-50.pkl"
-  PIXEL_MEAN: [123.675, 116.280, 103.530]
-  PIXEL_STD: [58.395, 57.120, 57.375]
+  PIXEL_MEAN: [18.892, 18.892, 18.892] # MUSCIMA++
+  PIXEL_STD: [66.788, 66.788, 66.788] # MUSCIMA++
   MASK_ON: False
   RESNETS:
     DEPTH: 50
