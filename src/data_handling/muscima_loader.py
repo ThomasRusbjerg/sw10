@@ -11,6 +11,20 @@ from mung.node import Node, bounding_box_intersection
 from tqdm import tqdm
 
 
+def load_all_muscima_annotations(annotations_directory) -> Dict[str, List[Node]]:
+    """
+    :param annotations_directory:
+    :return: Returns a dictionary of annotations with the filename as key
+    """
+    all_xml_files = [y for x in os.walk(annotations_directory) for y in glob(os.path.join(x[0], '*.xml'))]
+    node_annotations = {}
+    for xml_file in tqdm(all_xml_files, desc='Parsing annotation files'):
+        nodes = read_nodes_from_file(xml_file)
+        doc = nodes[0].document
+        node_annotations[doc] = nodes
+    return node_annotations
+
+
 def load_split(split_file_path: str) -> np.ndarray:
     """ Load train/validation/test split from file
 
@@ -36,6 +50,9 @@ def __load_mung(filename: str, exclude_classes: List[str]) -> NotationGraph:
     objects_to_exclude = [m for m in mungos if m.class_name in exclude_classes]
     for m in objects_to_exclude:
         mung.remove_vertex(m.id)
+    if len(mung.vertices) == 0:
+        print("filename", filename)
+        exit()
     return mung
 
 

@@ -96,7 +96,7 @@ class DatasetSplitter:
         shutil.rmtree(os.path.join(self.destination_directory, "test"), True)
 
     def split_images_into_training_validation_and_test_set(self):
-        print("Splitting data into training, validation and test sets...")
+        print("Splitting data into training, validation and test sets for data in", self.source_directory)
 
         training_sample_indices, validation_sample_indices, test_sample_indices = \
             self.get_independent_training_validation_and_test_sample_indices()

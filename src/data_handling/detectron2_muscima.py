@@ -1,3 +1,4 @@
+import os
 import json
 import pickle
 import numpy as np
@@ -6,6 +7,7 @@ from pycocotools import mask
 from skimage import measure
 from detectron2.structures import BoxMode
 from tqdm import tqdm
+
 
 def load_muscima_detectron_dataset(split_location):
     file = open(split_location, 'rb')
@@ -49,6 +51,7 @@ def binary_mask_to_polygon(binary_mask, tolerance=0):
 
     return polygons
 
+
 def get_muscima_classid_mapping():
     class_info_path = "data/MUSCIMA++/v2.0/mapping_all_classes.json"
     classes = {}
@@ -58,21 +61,22 @@ def get_muscima_classid_mapping():
             classes[c["name"]] = c["id"]
     return classes
 
-def get_muscima_imgid_mapping():
-    img_info_path = "data/MUSCIMA++/v2.0/mapping_img.json"
-    images_mappings = {}
+
+def get_muscima_imgid_mapping(img_info_path):
     with open(img_info_path) as json_file:
-        data = json.load(json_file)
-        images_mappings = data
+        images_mappings = json.load(json_file)
     return images_mappings
 
-def create_muscima_detectron_dataset(split_location):
-    images_root = "data/MUSCIMA++/v2.0/data/images"
-    mung_root = "data/MUSCIMA++/v2.0/data/annotations"
+
+def create_muscima_detectron_dataset(data_dir):
+
+    images_root = os.path.join(data_dir, "images")
+    mung_root = os.path.join(data_dir, "annotations")
+    split_location = data_dir + "training_validation_test/training.txt"
 
     # Get class id mapping
     classes = get_muscima_classid_mapping()
-    img_id_mapping = get_muscima_imgid_mapping()
+    img_id_mapping = get_muscima_imgid_mapping(data_dir+"/mapping_img.json")
 
     # Load filenames for split
     split = muscima_loader.load_split(split_location)
@@ -90,7 +94,7 @@ def create_muscima_detectron_dataset(split_location):
         height = images[i].shape[0]
         width = images[i].shape[1]
 
-        # Convert ajacency list to matrix
+        # Convert adjacency list to matrix
         largest_id = np.max([v.id for v in mung.vertices])
         adj_matrix = np.zeros((largest_id+1, largest_id+1))
         for edge in mung.edges:
@@ -127,5 +131,5 @@ def create_muscima_detectron_dataset(split_location):
 
     # Dump dataset to disk
     filename = split_location.split("/")[-1].split(".")[0] + ".pickle"
-    with open("data/" + filename, "wb") as dumpfile:
+    with open(data_dir + "training_validation_test/" + filename, "wb") as dumpfile:
         pickle.dump(dataset, dumpfile)
