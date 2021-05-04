@@ -11,14 +11,14 @@ MODEL:
   DETR:
     GIOU_WEIGHT: 2.0
     L1_WEIGHT: 5.0
-    NUM_OBJECT_QUERIES: 1500
+    NUM_OBJECT_QUERIES: 1000
     NUM_CLASSES: 116
 DATASETS:
   TRAIN: ("muscima_training",)
   TEST: ("muscima_validation",)
 SOLVER:
-  CHECKPOINT_PERIOD: 4620 # Maxiter/5
-  IMS_PER_BATCH: 6
+  CHECKPOINT_PERIOD: 110880 # Maxiter/5
+  IMS_PER_BATCH: 1
   BASE_LR: 0.0001
   # STEPS: (369600,) # Detr default
   # MAX_ITER: 554400 # Detr default
