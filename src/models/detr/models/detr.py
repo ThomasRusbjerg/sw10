@@ -168,61 +168,41 @@ class SetCriterion(nn.Module):
         """Compute the losses related to the relations between objects.
         """
         assert 'pred_relations' in outputs
-        # src_ids = torch.cat([t['mung_ids'][i] for t, (i, _) in zip(targets, indices)], dim=0)
-        # target_ids = torch.cat([t['mung_ids'][i] for t, (_, i) in zip(targets, indices)], dim=0)
-        # source_ids = [t['mung_ids'][i] for t, (i, _) in zip(targets, indices)]
+        # Index for object queries with was used in the matching
         source_idx = [i for _, (i, _) in zip(targets, indices)]
-
+        # Mung ids for ground truth objects matched with object queries
         target_ids = [t['mung_ids'][i] for t, (_, i) in zip(targets, indices)]
 
-        # target_idx = [i for _, (_, i) in zip(targets, indices)]
-
-        # relations_to_check = torch.cartesian_prod(src_ids[0], target_ids[0])
-        # a = indices[0][0]
-        # b = indices[0][1]
-
+        # Index at 0 since the data is dublicated across targets
         target_relations = targets[0]["relations"]
         pred_relations = outputs['pred_relations']
-        # src_batch, src_idx = self._get_src_permutation_idx(indices)
-        # tgt_batch, tgt_idx = self._get_tgt_permutation_idx(indices)
-        # src_relations_x = outputs['pred_relations'][src_batch, src_idx, :]
-        # src_relations_y = outputs['pred_relations'][src_batch, :, src_idx]
-        # tgt_relations_x = target_relations[tgt_idx, :]
-        # tgt_relations_y = target_relations[:, tgt_idx]
 
         pred = []
         label = []
+        # Iterate all matched pairs and extract gt and pred relations from adjecency matrices
         for batch in range(len(indices)):
             source_idx = indices[batch][0]
+            # Map mung id to object query index
             ids_to_idx = dict(zip(target_ids[batch].tolist(), source_idx.tolist()))
-            # target_idx = indices[batch][1]
+            # Create all posible relations between predicted objects
             gt_relations_to_check = torch.cartesian_prod(target_ids[batch], target_ids[batch])
             for (src_id, tgt_id) in gt_relations_to_check:
+                # Tensor to int
                 src_id = src_id.item()
                 tgt_id = tgt_id.item()
+                # No self links
+                if src_id == tgt_id:
+                    continue
+                # Append ground truth, both A->B and B->A
                 label.append(target_relations[batch][src_id, tgt_id])
                 label.append(target_relations[batch][tgt_id, src_id])
+                # Map id to index
                 pred_idx_src = ids_to_idx[src_id]
                 pred_idx_tgt = ids_to_idx[tgt_id]
+                # Append prediction, both A->B and B->A
                 pred.append(pred_relations[batch, pred_idx_src, pred_idx_tgt])
                 pred.append(pred_relations[batch, pred_idx_tgt, pred_idx_src])
-
-
-            # pred_relations = pred_relations[batch, :, :]
-
-            # for (src_id, tgt_id) in pred_relations_to_check:
-            #     pred.append(pred_relations[src_id, tgt_id])
-            #     pred.append(pred_relations[tgt_id, src_id])
-
-            # for r in range(0, row):
-            #     for c in range(0, col):
-            #         pred_relation = src_relations[batch, r, c]
-            #         pred.append(pred_relation)
-            #         offset = batch * row
-            #         id_a = target_ids[offset + r]
-            #         id_b = target_ids[offset + c]
-            #         gt_relation = gt_relations[id_a, id_b]
-            #         label.append(gt_relation)
+        # Convert to tensors
         pred = torch.as_tensor(pred, dtype=float, device=pred_relations.device)
         label = torch.as_tensor(label, dtype=float, device=pred_relations.device)
 
