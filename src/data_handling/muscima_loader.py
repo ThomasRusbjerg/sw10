@@ -50,9 +50,6 @@ def __load_mung(filename: str, exclude_classes: List[str]) -> NotationGraph:
     objects_to_exclude = [m for m in mungos if m.class_name in exclude_classes]
     for m in objects_to_exclude:
         mung.remove_vertex(m.id)
-    if len(mung.vertices) == 0:
-        print("filename", filename)
-        exit()
     return mung
 
 
