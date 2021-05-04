@@ -2,7 +2,6 @@
 """
 DETR model and criterion classes.
 """
-import itertools
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -203,8 +202,8 @@ class SetCriterion(nn.Module):
                 pred.append(pred_relations[batch, pred_idx_src, pred_idx_tgt])
                 pred.append(pred_relations[batch, pred_idx_tgt, pred_idx_src])
         # Convert to tensors
-        pred = torch.as_tensor(pred, dtype=float, device=pred_relations.device)
-        label = torch.as_tensor(label, dtype=float, device=pred_relations.device)
+        pred = torch.tensor(pred, requires_grad=True).to(device=pred_relations.device)
+        label = torch.tensor(label).to(device=pred_relations.device, dtype=torch.float32)
 
         losses = {
             "loss_relations": F.binary_cross_entropy(pred, label)

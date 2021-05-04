@@ -18,7 +18,7 @@ DATASETS:
   TEST: ("muscima_validation",)
 SOLVER:
   CHECKPOINT_PERIOD: 110880 # Maxiter/5
-  IMS_PER_BATCH: 1
+  IMS_PER_BATCH: 2
   BASE_LR: 0.0001
   # STEPS: (369600,) # Detr default
   # MAX_ITER: 554400 # Detr default
