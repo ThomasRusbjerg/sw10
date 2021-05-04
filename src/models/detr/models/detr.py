@@ -5,7 +5,6 @@ DETR model and criterion classes.
 import torch
 import torch.nn.functional as F
 from torch import nn
-
 from models.detr.util import box_ops
 from models.detr.util.misc import (NestedTensor, nested_tensor_from_tensor_list,
                        accuracy, get_world_size, interpolate,
@@ -64,7 +63,6 @@ class DETR(nn.Module):
         src, mask = features[-1].decompose()
         assert mask is not None
         hs = self.transformer(self.input_proj(src), mask, self.query_embed.weight, pos[-1])[0][-1]
-        temp = self.transformer.decoder.layers[-1].self_attn
         outputs_class = self.class_embed(hs)
         outputs_coord = self.bbox_embed(hs).sigmoid()
         relation_embeds = self.relation_embed(hs)
@@ -169,28 +167,46 @@ class SetCriterion(nn.Module):
         """Compute the losses related to the relations between objects.
         """
         assert 'pred_relations' in outputs
+        # Index for object queries with was used in the matching
+        source_idx = [i for _, (i, _) in zip(targets, indices)]
+        # Mung ids for ground truth objects matched with object queries
+        target_ids = [t['mung_ids'][i] for t, (_, i) in zip(targets, indices)]
 
-        target_ids = torch.cat([t['mung_ids'][i] for t, (_, i) in zip(targets, indices)], dim=0)
-        src_relations = outputs['pred_relations']
-        target_relations = [t['relations'] for t in targets]
-        _, row, col = src_relations.shape
+        # Index at 0 since the data is dublicated across targets
+        target_relations = targets[0]["relations"]
+        pred_relations = outputs['pred_relations']
+
         pred = []
         label = []
-        for gt_relations in target_relations:
-            for i in range(0, row-1):
-                for j in range(0, col-1):
-                    pred_relation = src_relations[:, i, j]
-                    pred.append(pred_relation)
-
-                    id_a = target_ids[i]
-                    id_b = target_ids[j]
-                    gt_relation = gt_relations[0][id_a, id_b]
-                    label.append(gt_relation)
-        pred = torch.as_tensor(pred, dtype=float, device=target_ids.device)
-        label = torch.as_tensor(label, dtype=float, device=target_ids.device)
+        # Iterate all matched pairs and extract gt and pred relations from adjecency matrices
+        for batch in range(len(indices)):
+            source_idx = indices[batch][0]
+            # Map mung id to object query index
+            ids_to_idx = dict(zip(target_ids[batch].tolist(), source_idx.tolist()))
+            # Create all posible relations between predicted objects
+            gt_relations_to_check = torch.cartesian_prod(target_ids[batch], target_ids[batch])
+            for (src_id, tgt_id) in gt_relations_to_check:
+                # Tensor to int
+                src_id = src_id.item()
+                tgt_id = tgt_id.item()
+                # No self links
+                if src_id == tgt_id:
+                    continue
+                # Append ground truth, both A->B and B->A
+                label.append(target_relations[batch][src_id, tgt_id])
+                label.append(target_relations[batch][tgt_id, src_id])
+                # Map id to index
+                pred_idx_src = ids_to_idx[src_id]
+                pred_idx_tgt = ids_to_idx[tgt_id]
+                # Append prediction, both A->B and B->A
+                pred.append(pred_relations[batch, pred_idx_src, pred_idx_tgt])
+                pred.append(pred_relations[batch, pred_idx_tgt, pred_idx_src])
+        # Convert to tensors
+        pred = torch.tensor(pred, requires_grad=True).to(device=pred_relations.device)
+        label = torch.tensor(label).to(device=pred_relations.device, dtype=torch.float32)
 
         losses = {
-            "loss_relations": nn.functional.binary_cross_entropy(pred, label)
+            "loss_relations": F.binary_cross_entropy(pred, label)
         }
         return losses
 
@@ -254,6 +270,7 @@ class SetCriterion(nn.Module):
                       The expected keys in each dict depends on the losses applied, see each loss' doc
         """
         outputs_without_aux = {k: v for k, v in outputs.items() if k != 'aux_outputs'}
+        del outputs_without_aux['pred_relations']
 
         # Retrieve the matching between the outputs of the last layer and the targets
         indices = self.matcher(outputs_without_aux, targets)
