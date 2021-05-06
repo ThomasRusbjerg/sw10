@@ -35,7 +35,7 @@ class DETR(nn.Module):
         hidden_dim = transformer.d_model
         self.class_embed = nn.Linear(hidden_dim, num_classes + 1)
         self.bbox_embed = MLP(hidden_dim, hidden_dim, 4, 3)
-        self.relation_embed = nn.Linear(hidden_dim, hidden_dim)
+        self.relation_embed = nn.Linear(num_queries, num_queries)
         self.query_embed = nn.Embedding(num_queries, hidden_dim)
         self.input_proj = nn.Conv2d(backbone.num_channels, hidden_dim, kernel_size=1)
         self.backbone = backbone
@@ -65,8 +65,8 @@ class DETR(nn.Module):
         hs = self.transformer(self.input_proj(src), mask, self.query_embed.weight, pos[-1])[0][-1]
         outputs_class = self.class_embed(hs)
         outputs_coord = self.bbox_embed(hs).sigmoid()
-        relation_embeds = self.relation_embed(hs)
-        output_relations = torch.bmm(relation_embeds, torch.transpose(relation_embeds, 1, 2)).sigmoid()
+        queries_relation = torch.bmm(hs, torch.transpose(hs, 1, 2))
+        output_relations = self.relation_embed(queries_relation).sigmoid()
 
         out = {'pred_logits': outputs_class, 'pred_boxes': outputs_coord, 'pred_relations': output_relations}
         if self.aux_loss:

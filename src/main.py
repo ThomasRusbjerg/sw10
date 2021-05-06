@@ -44,8 +44,11 @@ def visualise(cfg, data, metadata, n_samples):
 
 
 def main():
+    # from data_handling.prepare_datasets import main
+    # main()
+    # exit()
     # Create detectron format datasets
-    training_split_file_path = "data/training_validation_test/training.txt"
+    # training_split_file_path = "data/training_validation_test/training.txt"
     # val_split_file_path = "data/training_validation_test/validation.txt"
     # test_split_file_path = "data/training_validation_test/test.txt"
     # create_muscima_detectron_dataset(training_split_file_path)

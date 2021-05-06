@@ -9,7 +9,7 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm
 from mung.node import Node
-from muscima_loader import load_all_muscima_annotations
+from data_handling.muscima_loader import load_all_muscima_annotations
 
 from lxml.etree import Element, SubElement, tostring
 

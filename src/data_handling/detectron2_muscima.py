@@ -68,11 +68,11 @@ def get_muscima_imgid_mapping(img_info_path):
     return images_mappings
 
 
-def create_muscima_detectron_dataset(data_dir):
+def create_muscima_detectron_dataset(data_dir, split_location):
 
     images_root = os.path.join(data_dir, "images")
     mung_root = os.path.join(data_dir, "annotations")
-    split_location = data_dir + "training_validation_test/training.txt"
+    split_location = data_dir + split_location
 
     # Get class id mapping
     classes = get_muscima_classid_mapping()
@@ -110,14 +110,8 @@ def create_muscima_detectron_dataset(data_dir):
         for annotation in mung.vertices:
             # Convert bbox mask to image mask
             mask_projected = annotation.project_on(images[i])
-            # Based on https://github.com/cocodataset/cocoapi/issues/131
-            fortran_binary_mask = np.asfortranarray(mask_projected)
-            encoded_mask = mask.encode(fortran_binary_mask)
-            # area = mask.area(encoded_mask)
-            # bounding_box = mask.toBbox(encoded_mask).astype(int)
-            # bounding_box = annotation["bounding_box"]
-            bounding_box = [annotation.left, annotation.top, annotation.right, annotation.bottom]
             segmentations = binary_mask_to_polygon(mask_projected, tolerance=2)
+            bounding_box = [annotation.left, annotation.top, annotation.right, annotation.bottom]
             img_instance["annotations"].append(
                 {
                     "bbox": bounding_box,

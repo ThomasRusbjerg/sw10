@@ -6,7 +6,7 @@ import os
 import argparse
 import json
 from collections import Counter
-from muscima_loader import load_all_muscima_annotations
+from data_handling.muscima_loader import load_all_muscima_annotations
 
 
 def image_mappings(images_dir, output_path):
