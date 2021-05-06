@@ -107,14 +107,14 @@ class DatasetSplitter:
 
     def copy_files(self, path_to_images_of_class, sample_indices, name_of_split):
         files = np.array(os.listdir(path_to_images_of_class))[sample_indices]
-        destination_path = os.path.join(self.destination_directory, name_of_split)
+        destination_path = os.path.join(self.destination_directory)
         os.makedirs(destination_path, exist_ok=True)
         print("Copying {0} {1} files...".format(len(files), name_of_split))
 
         with open(os.path.join(self.destination_directory, name_of_split + ".txt"), "w") as image_set_dump:
             for image in files:
                 image_set_dump.write(os.path.splitext(image)[0] + "\n")
-                shutil.copy(os.path.join(path_to_images_of_class, image), destination_path)
+                # shutil.copy(os.path.join(path_to_images_of_class, image), destination_path)
 
 
 if __name__ == "__main__":
