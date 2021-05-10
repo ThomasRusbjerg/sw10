@@ -55,11 +55,12 @@ def main():
     # exit()
 
     # Register datasets in detectron
+    basepath = "data/MUSCIMA++/v2.0/data/measures/training_validation_test/"
     for dataset in ["training", "validation"]:
         DatasetCatalog.register(
             "muscima_" + dataset,
             lambda dataset=dataset: load_muscima_detectron_dataset(
-                "data/" + dataset + ".pickle"
+                basepath + dataset + ".pickle"
             ),
         )
         MetadataCatalog.get("muscima_" + dataset).set(

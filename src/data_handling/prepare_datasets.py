@@ -86,7 +86,7 @@ def main():
         print("Creating Detectron/Coco dataset for", os.path.dirname(folder))
         image_dir = os.path.join(folder, "images")
         image_mappings(image_dir, folder)
-        splits = ["validation", "test"]
+        splits = ["training", "validation", "test"]
         for split in splits:
             split_location = "training_validation_test/" + split + ".txt"
             create_muscima_detectron_dataset(data_dir=folder, split_location=split_location)
