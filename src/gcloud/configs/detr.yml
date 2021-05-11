@@ -3,7 +3,7 @@ trainingInput:
   masterType: n1-highmem-4
   masterConfig:
     acceleratorConfig:
-      type: nvidia-tesla-k80
+      type: nvidia-tesla-v100
       count: 1
   # hyperparameters:
   #   goal: MINIMIZE
