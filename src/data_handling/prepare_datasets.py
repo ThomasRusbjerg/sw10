@@ -16,7 +16,8 @@ def main():
     parser.add_argument('--save_dir', '-o', dest='save_dir',
                         type=str,
                         help='Directory to put MUSCIMA++ in.',
-                        default="/user/student.aau.dk/trusbj16/data/MUSCIMA++")
+                        default="data/MUSCIMA++")
+                        # default="/user/student.aau.dk/trusbj16/data/MUSCIMA++")
     parser.add_argument('-d', dest='download',
                         action='store_true',
                         help='Download MUSCIMA++ (True) or use existing (False).',
