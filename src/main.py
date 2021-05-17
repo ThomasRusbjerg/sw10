@@ -69,7 +69,17 @@ def main():
         )
 
     # Train mask rcnn
-    train()
+    # train()
+
+    # Predict and visualise mask rcnn
+    from detectron2.config import get_cfg
+    cfg = get_cfg()
+    cfg.merge_from_file("src/models/mask_rcnn/mask_rcnn_config.yaml")
+    cfg.MODEL.WEIGHTS = "src/models/mask_rcnn/omr_jobs_20210511-123701_model_0019199.pth"
+    muscima_metadata = MetadataCatalog.get("muscima_validation")
+    data = load_muscima_detectron_dataset(basepath + "validation.pickle")
+    visualise(cfg, data, muscima_metadata, 1)
+
 
     # Setup DETR config
     # args = default_argument_parser().parse_args()
