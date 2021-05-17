@@ -1,8 +1,10 @@
 MODEL:
   META_ARCHITECTURE: "Detr"
   WEIGHTS: "detectron2://ImageNetPretrained/torchvision/R-50.pkl"
-  PIXEL_MEAN: [21.409, 21.409, 21.409] # MUSCIMA++
-  PIXEL_STD: [70.717, 70.717, 70.717] # MUSCIMA++
+  PIXEL_MEAN: [18.745, 18.745, 18.745] # MUSCIMA++ staves
+  PIXEL_STD: [66.547, 66.547, 66.547] # MUSCIMA++ staves
+  # PIXEL_MEAN: [21.409, 21.409, 21.409] # MUSCIMA++ mearsure
+  # PIXEL_STD: [70.717, 70.717, 70.717] # MUSCIMA++ mearsure
   MASK_ON: False
   RESNETS:
     DEPTH: 50
@@ -11,7 +13,7 @@ MODEL:
   DETR:
     GIOU_WEIGHT: 2.0
     L1_WEIGHT: 5.0
-    NUM_OBJECT_QUERIES: 1000
+    NUM_OBJECT_QUERIES: 500
     NUM_CLASSES: 116
 DATASETS:
   TRAIN: ("muscima_training",)

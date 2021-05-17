@@ -13,6 +13,7 @@ from data_handling.detectron2_muscima import (
     get_muscima_classid_mapping,
 )
 import models.detr.train_net as detr_train
+from models.mask_rcnn.mask_rcnn import train
 
 def detr(args):
     print("Command Line Args:", args)
@@ -67,22 +68,25 @@ def main():
             thing_classes=[classname for classname in get_muscima_classid_mapping()]
         )
 
+    # Train mask rcnn
+    train()
+
     # Setup DETR config
-    args = default_argument_parser().parse_args()
-    setattr(
-        args, "config_file", "src/models/detr/configs/detr_256_6_6_torchvision.yaml"
-    )
-    setattr(args, "num_gpus", 1)
+    # args = default_argument_parser().parse_args()
+    # setattr(
+    #     args, "config_file", "src/models/detr/configs/detr_256_6_6_torchvision.yaml"
+    # )
+    # setattr(args, "num_gpus", 1)
 
     # Predict and visualise
     # setattr(args, "opts", ['MODEL.WEIGHTS', 'models/model_final.pth'])
-    cfg = detr_train.setup(args)
+    # cfg = detr_train.setup(args)
     # muscima_metadata = MetadataCatalog.get("muscima_validation")
     # data = load_muscima_detectron_dataset("data/validation.pickle")
     # visualise(cfg, data, muscima_metadata, 1)
     
     # Training
-    detr(args)
+    # detr(args)
 
 
 if __name__ == "__main__":

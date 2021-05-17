@@ -13,6 +13,9 @@ def load_muscima_detectron_dataset(split_location):
     file = open(split_location, 'rb')
     data = pickle.load(file)
     file.close()
+    # Remove claudia filepath
+    for d in data:
+        d["file_name"] = d["file_name"].replace("/user/student.aau.dk/trusbj16/", "")
     return data
 
 
