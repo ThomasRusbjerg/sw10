@@ -16,8 +16,8 @@ def main():
     parser.add_argument('--save_dir', '-o', dest='save_dir',
                         type=str,
                         help='Directory to put MUSCIMA++ in.',
-                        default="data/MUSCIMA++")
-                        # default="/user/student.aau.dk/trusbj16/data/MUSCIMA++")
+                        # default="data/MUSCIMA++")
+                        default="/user/student.aau.dk/trusbj16/data/MUSCIMA++")
     parser.add_argument('-d', dest='download',
                         action='store_true',
                         help='Download MUSCIMA++ (True) or use existing (False).',
@@ -41,8 +41,8 @@ def main():
     if args.download:
         download_muscima_pp_v2(args.save_dir)
 
-    data_directory = "data/MUSCIMA++/v2.0/data"
-    # data_directory = "/user/student.aau.dk/trusbj16/data/MUSCIMA++/v2.0/data"
+    # data_directory = "data/MUSCIMA++/v2.0/data"
+    data_directory = "/user/student.aau.dk/trusbj16/data/MUSCIMA++/v2.0/data"
     image_directory = os.path.join(data_directory, "full_page/images")
     annotation_directory = os.path.join(data_directory, "full_page/annotations")
 
@@ -70,8 +70,8 @@ def main():
     for method in crop_methods:
         image_directories.append(data_directory + "/" + method + "/" + "images")
 
-    independent_set = "data/MUSCIMA++/v2.0/specifications/testset-independent.txt"
-    # independent_set = "/user/student.aau.dk/trusbj16/data/MUSCIMA++/v2.0/specifications/testset-independent.txt"
+    # independent_set = "data/MUSCIMA++/v2.0/specifications/testset-independent.txt"
+    independent_set = "/user/student.aau.dk/trusbj16/data/MUSCIMA++/v2.0/specifications/testset-independent.txt"
 
     # For each dataset, split into train/validation/test
     for image_dir in image_directories:
