@@ -21,7 +21,8 @@ SOLVER:
   IMS_PER_BATCH: 6
   BASE_LR: 0.0001
   STEPS: (369600,) # Detr default
-  MAX_ITER: 554400 # Detr default
+  # MAX_ITER: 554400 # Detr default
+  MAX_ITER: 1108800
   # STEPS: (46200,)
   # MAX_ITER: 69300
   WARMUP_FACTOR: 1.0

@@ -75,7 +75,7 @@ def main():
     setattr(args, "num_gpus", 1)
 
     # Predict and visualise
-    # setattr(args, "opts", ['MODEL.WEIGHTS', 'models/model_final.pth'])
+    setattr(args, "opts", ['MODEL.WEIGHTS', 'src/models/model_0498959.pth'])
     cfg = detr_train.setup(args)
     # muscima_metadata = MetadataCatalog.get("muscima_validation")
     # data = load_muscima_detectron_dataset("data/validation.pickle")
