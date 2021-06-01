@@ -170,10 +170,11 @@ def create_muscima_annotations(output_path: str,
     nodes = Element("Nodes",
                     dataset="MUSCIMA-pp_2.0",
                     document=output_file_name)
-    for music_object in nodes_appearing_in_image:
+    for i, music_object in enumerate(nodes_appearing_in_image):
         node = SubElement(nodes, "Node")
         identifier = SubElement(node, "Id")
-        identifier.text = music_object.id.__str__()
+        # identifier.text = music_object.id.__str__()
+        identifier.text = i.__str__()  # Reset index to 1..N
         class_name = SubElement(node, "ClassName")
         class_name.text = music_object.class_name
         top = SubElement(node, "Top")
@@ -193,7 +194,11 @@ def create_muscima_annotations(output_path: str,
         valid_outlinks = list(set(music_object.outlinks).intersection(ids_of_nodes_in_this_image))
         if valid_outlinks:
             outlinks = SubElement(node, "Outlinks")
-            outlinks.text = valid_outlinks.__str__()[1:-1].replace(',', '')
+            outlink_ids = []
+            # Get new ids based on old ids
+            for outlink in valid_outlinks:
+                outlink_ids.append(ids_of_nodes_in_this_image.index(outlink))
+            outlinks.text = outlink_ids.__str__()[1:-1].replace(',', '')
 
     xml_file_path = os.path.join(output_path,
                                  os.path.splitext(output_file_name)[0] + ".xml")
