@@ -208,8 +208,9 @@ class Detr(nn.Module):
         else:
             box_cls = output["pred_logits"]
             box_pred = output["pred_boxes"]
+            relations_pred = output["pred_relations"]
             mask_pred = output["pred_masks"] if self.mask_on else None
-            results = self.inference(box_cls, box_pred, mask_pred, images.image_sizes)
+            results = self.inference(box_cls, box_pred, relations_pred, mask_pred, images.image_sizes)
             processed_results = []
             for results_per_image, input_per_image, image_size in zip(
                 results, batched_inputs, images.image_sizes
@@ -238,7 +239,7 @@ class Detr(nn.Module):
                 new_targets[-1].update({"masks": gt_masks})
         return new_targets
 
-    def inference(self, box_cls, box_pred, mask_pred, image_sizes):
+    def inference(self, box_cls, box_pred, relations_pred, mask_pred, image_sizes):
         """
         Arguments:
             box_cls (Tensor): tensor of shape (batch_size, num_queries, K).
@@ -261,8 +262,9 @@ class Detr(nn.Module):
             scores_per_image,
             labels_per_image,
             box_pred_per_image,
+            relations_per_image,
             image_size,
-        ) in enumerate(zip(scores, labels, box_pred, image_sizes)):
+        ) in enumerate(zip(scores, labels, box_pred, relations_pred, image_sizes)):
             result = Instances(image_size)
             result.pred_boxes = Boxes(box_cxcywh_to_xyxy(box_pred_per_image))
 
@@ -283,6 +285,7 @@ class Detr(nn.Module):
 
             result.scores = scores_per_image
             result.pred_classes = labels_per_image
+            result.pred_relations = relations_per_image
             results.append(result)
         return results
 

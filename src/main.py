@@ -48,15 +48,16 @@ def main():
     # main()
     # exit()
     # Create detectron format datasets
-    # training_split_file_path = "data/training_validation_test/training.txt"
+    # training_dir = "data/MUSCIMA++/v2.0/data/full_page"
+    # training_split = "/training_validation_test/training.txt"
     # val_split_file_path = "data/training_validation_test/validation.txt"
     # test_split_file_path = "data/training_validation_test/test.txt"
-    # create_muscima_detectron_dataset(training_split_file_path)
+    # create_muscima_detectron_dataset(training_dir, training_split)
     # exit()
 
     # Register datasets in detectron
     basepath = "data/MUSCIMA++/v2.0/data/staves/training_validation_test/"
-    for dataset in ["training", "validation"]:
+    for dataset in ["training", "validation", "test"]:
         DatasetCatalog.register(
             "muscima_" + dataset,
             lambda dataset=dataset: load_muscima_detectron_dataset(
@@ -75,13 +76,15 @@ def main():
     setattr(args, "num_gpus", 1)
 
     # Predict and visualise
-    # setattr(args, "opts", ['MODEL.WEIGHTS', 'models/model_final.pth'])
+    setattr(args, "opts", ['MODEL.WEIGHTS', 'data/omr_jobs_20210525-153853_model_0110879.pth'])
     cfg = detr_train.setup(args)
     # muscima_metadata = MetadataCatalog.get("muscima_validation")
     # data = load_muscima_detectron_dataset("data/validation.pickle")
     # visualise(cfg, data, muscima_metadata, 1)
     
     # Training
+    # pred = DefaultPredictor(cfg)
+    # exit()
     detr(args)
 
 

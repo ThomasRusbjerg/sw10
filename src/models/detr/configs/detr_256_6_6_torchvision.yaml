@@ -15,7 +15,7 @@ MODEL:
     NUM_CLASSES: 116
 DATASETS:
   TRAIN: ("muscima_training",)
-  TEST: ("muscima_validation",)
+  TEST: ("muscima_test",)
 SOLVER:
   CHECKPOINT_PERIOD: 55440 # Maxiter/10
   IMS_PER_BATCH: 6
