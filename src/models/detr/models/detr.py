@@ -204,9 +204,11 @@ class SetCriterion(nn.Module):
         # Convert to tensors
         pred = torch.tensor(pred, requires_grad=True).to(device=pred_relations.device)
         label = torch.tensor(label).to(device=pred_relations.device, dtype=torch.float32)
-
+        loss = F.binary_cross_entropy(pred, label)
+        if loss.isnan().any():
+            loss.data = torch.zeros(1, 1, requires_grad=True).to(device=pred_relations.device)
         losses = {
-            "loss_relations": F.binary_cross_entropy(pred, label)
+            "loss_relations": loss
         }
         return losses
 

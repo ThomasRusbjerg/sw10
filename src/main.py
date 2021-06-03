@@ -56,7 +56,7 @@ def main():
     # exit()
 
     # Register datasets in detectron
-    basepath = "data/MUSCIMA++/v2.0/data/staves/training_validation_test/"
+    basepath = "data/MUSCIMA++/v2.0/data/measures/training_validation_test/"
     for dataset in ["training", "validation", "test"]:
         DatasetCatalog.register(
             "muscima_" + dataset,
