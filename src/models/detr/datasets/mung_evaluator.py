@@ -67,9 +67,9 @@ class MuNGEvaluator(DatasetEvaluator):
             self.f1_scores.append(f1_score)
 
     def evaluate(self):
-        results = collections.OrderedDict()
-        results["precision"] = np.average(self.precisions)
-        results["recall"] = np.average(self.recalls)
-        results["f1_score"] = np.average(self.f1_scores)
-        print(results)
-        return results
+        results = {
+            "precision": np.average(self.precisions),
+            "recall": np.average(self.recalls),
+            "f1_score": np.average(self.f1_scores)
+        }
+        return collections.OrderedDict({"relations": results})

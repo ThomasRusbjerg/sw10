@@ -107,8 +107,8 @@ def evaluate_result(reference_objects, predicted_objects):
 
     precision, recall, f1_score, true_positives, false_positives, false_negatives = \
         compute_statistics_on_crop_objects(reference_objects, predicted_objects)
-    print('Precision: {0:.3f}, Recall: {1:.3f}, F1-Score: {2:.3f}, True positives: {3}, False positives: {4}, '
-          'False Negatives: {5}'.format(precision, recall, f1_score, true_positives, false_positives, false_negatives))
+    # print('Precision: {0:.3f}, Recall: {1:.3f}, F1-Score: {2:.3f}, True positives: {3}, False positives: {4}, '
+    #       'False Negatives: {5}'.format(precision, recall, f1_score, true_positives, false_positives, false_negatives))
     return precision, recall, f1_score, true_positives, false_positives, false_negatives
 
 
