@@ -69,21 +69,28 @@ def match(p_obj, r_obj, threshold=0.5):
                                 )
 
                 IoU = iw * ih / ua
-
+                return IoU
                 if IoU > threshold:
                     return True
 
-    return False
+    return 0
 
 
 def get_object_matching_pairs(predicted_objects: List[CropObject], reference_objects: List[CropObject]):
     pairs = []
 
     for p_obj in predicted_objects:
+        scores = []
         for r_obj in reference_objects:
-            if match(p_obj, r_obj):
-                pairs.append((p_obj.objid, r_obj.objid))
+            scores.append(match(p_obj, r_obj))
+            # if match(p_obj, r_obj) > 0.5:
+            #     pairs.append((p_obj.objid, r_obj.objid))
+            #     break
+        max_iou = np.max(scores)
+        max_idx = scores.index(max_iou)
 
+        if max_iou > 0.5:
+            pairs.append((p_obj.objid, reference_objects[max_idx].objid))
     return pairs
 
 
@@ -119,12 +126,6 @@ def compute_statistics_on_crop_objects(reference_objects, predicted_objects):
 
     # Build pairs between predicted and reference
     object_matching_pair = get_object_matching_pairs(predicted_objects, reference_objects)
-
-    # TODO: ---------- TRR made this ----------
-    # If no matches return (avoid divide by 0)
-    if (len(object_matching_pair) == 0):
-        return 0, 0, 0, 0, 0, 0
-    # TODO: ---------- TRR made this ----------
     
     # Relative ids
     reference_to_prediction_mapping = {r: p for p, r in object_matching_pair}
@@ -164,10 +165,16 @@ def compute_statistics_on_crop_objects(reference_objects, predicted_objects):
                 # An outgoing edge from the reference object does have a corresponding object
                 # in the prediction, but no edge, therefore it is a false negative.
                 false_negatives += 1
+    precision = 0
+    recall = 0
+    f1_score = 0
 
-    precision = true_positives / (true_positives + false_positives)
-    recall = true_positives / (true_positives + false_negatives)
-    f1_score = (2. * true_positives) / (2. * true_positives + false_positives + false_negatives)
+    if (true_positives + false_positives) != 0:
+        precision = true_positives / (true_positives + false_positives)
+    if (true_positives + false_negatives) != 0:
+        recall = true_positives / (true_positives + false_negatives)
+    if (2. * true_positives + false_positives + false_negatives) != 0:
+        f1_score = (2. * true_positives) / (2. * true_positives + false_positives + false_negatives)
 
     return precision, recall, f1_score, true_positives, false_positives, false_negatives
 
