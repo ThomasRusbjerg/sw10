@@ -76,7 +76,7 @@ def main():
     setattr(args, "num_gpus", 1)
 
     # Predict and visualise
-    setattr(args, "opts", ['MODEL.WEIGHTS', 'data/omr_jobs_20210525-153853_model_0110879.pth'])
+    setattr(args, "opts", ['MODEL.WEIGHTS', 'data/omr_jobs_20210602-180916_model_0110879.pth'])
     cfg = detr_train.setup(args)
     # muscima_metadata = MetadataCatalog.get("muscima_validation")
     # data = load_muscima_detectron_dataset("data/validation.pickle")

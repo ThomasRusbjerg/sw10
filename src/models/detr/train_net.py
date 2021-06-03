@@ -33,7 +33,7 @@ from detectron2.evaluation import COCOEvaluator, verify_results
 
 from detectron2.solver.build import maybe_add_gradient_clipping
 
-from models.detr.mung_evaluator import MuNGEvaluator
+from models.detr.datasets.mung_evaluator import MuNGEvaluator
 
 class Trainer(DefaultTrainer):
     """
