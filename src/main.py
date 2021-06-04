@@ -1,6 +1,7 @@
 import cv2, random
 import torch
 import detectron2
+import numpy as np
 from detectron2.utils.logger import setup_logger
 from detectron2.engine import DefaultPredictor
 from detectron2.utils.visualizer import Visualizer
@@ -56,7 +57,7 @@ def main():
     # exit()
 
     # Register datasets in detectron
-    basepath = "data/MUSCIMA++/v2.0/data/measures/training_validation_test/"
+    basepath = "data/MUSCIMA++/v2.0/data/staves/training_validation_test/"
     for dataset in ["training", "validation", "test"]:
         DatasetCatalog.register(
             "muscima_" + dataset,
@@ -78,14 +79,42 @@ def main():
     # Predict and visualise
     setattr(args, "opts", ['MODEL.WEIGHTS', 'data/omr_jobs_20210602-180916_model_0110879.pth'])
     cfg = detr_train.setup(args)
-    # muscima_metadata = MetadataCatalog.get("muscima_validation")
-    # data = load_muscima_detectron_dataset("data/validation.pickle")
-    # visualise(cfg, data, muscima_metadata, 1)
-    
+        
     # Training
     # pred = DefaultPredictor(cfg)
     # exit()
     detr(args)
+
+    ## Count object instances
+    # muscima_metadata = MetadataCatalog.get("muscima_training")
+    # data = load_muscima_detectron_dataset("data/MUSCIMA++/v2.0/data/measures/training_validation_test/training.pickle")
+    # count_object_instances(data, muscima_metadata)
+
+    # visualise_dataset(cfg, data, muscima_metadata)
+
+
+def count_object_instances(data, metadata):
+    category_instance_count = np.zeros(len(metadata.thing_classes))
+    for instance in data:
+        for annotaion in instance["annotations"]:
+            id = annotaion["category_id"]
+            category_instance_count[id] = category_instance_count[id] + 1
+    combine = zip(metadata.thing_classes, category_instance_count)
+    res = sorted(combine, key = lambda x: x[1])
+    for obj in res:
+        print(obj)
+
+def visualise_dataset(cfg, data, metadata):
+    visualise(cfg, data, metadata, 3)
+    for d in random.sample(data, 3):
+        img = cv2.imread(d["file_name"])
+        visualizer = Visualizer(img[:, :, ::-1], metadata=metadata, scale=0.5)
+        vis = visualizer.draw_dataset_dict(d)
+        cv2.imshow(
+            "image", vis.get_image()[:, :, ::-1]
+        )  # ::-1 converts BGR to RGB
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":

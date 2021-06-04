@@ -143,7 +143,10 @@ class Detr(nn.Module):
                 del new_weight
             self.detr = DETRsegm(self.detr, freeze_detr=(frozen_weights != ""))
             self.seg_postprocess = PostProcessSegm
-
+        # print(self.detr.query_embed.weight.data)
+        # self.detr.query_embed.weight.data.uniform_(1,1)
+        # print(self.detr.query_embed.weight.data)
+        # exit()
         self.detr.to(self.device)
 
         # building criterion
