@@ -197,8 +197,8 @@ class Detr(nn.Module):
 
         if self.training:
             gt_instances = [x["instances"].to(self.device) for x in batched_inputs]
-            gt_mung_links = [torch.as_tensor(x["mung_links"], dtype=torch.int, device=self.device) for x in batched_inputs]
-            targets = self.prepare_targets(gt_instances, gt_mung_links)
+            # gt_mung_links = [torch.as_tensor(x["mung_links"], dtype=torch.int, device=self.device) for x in batched_inputs]
+            targets = self.prepare_targets(gt_instances)
             loss_dict = self.criterion(output, targets)
             weight_dict = self.criterion.weight_dict
             for k in loss_dict.keys():
@@ -220,7 +220,7 @@ class Detr(nn.Module):
                 processed_results.append({"instances": r})
             return processed_results
 
-    def prepare_targets(self, targets, mung_links):
+    def prepare_targets(self, targets):
         new_targets = []
         for targets_per_image in targets:
             h, w = targets_per_image.image_size
@@ -230,8 +230,8 @@ class Detr(nn.Module):
             gt_classes = targets_per_image.gt_classes
             gt_boxes = targets_per_image.gt_boxes.tensor / image_size_xyxy
             gt_boxes = box_xyxy_to_cxcywh(gt_boxes)
-            mung_ids = targets_per_image.mung_ids
-            new_targets.append({"labels": gt_classes, "boxes": gt_boxes, 'mung_ids': mung_ids, 'relations': mung_links})
+            # mung_ids = targets_per_image.mung_ids
+            new_targets.append({"labels": gt_classes, "boxes": gt_boxes})
             if self.mask_on and hasattr(targets_per_image, "gt_masks"):
                 gt_masks = targets_per_image.gt_masks
                 gt_masks = convert_coco_poly_to_mask(gt_masks.polygons, h, w)

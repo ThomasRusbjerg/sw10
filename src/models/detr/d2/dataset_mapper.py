@@ -118,8 +118,8 @@ class DetrDatasetMapper:
                 if obj.get("iscrowd", 0) == 0
             ]
             instances = utils.annotations_to_instances(annos, image_shape)
-            mung_ids = [int(obj["object_id"]) for obj in annos]
-            instances.mung_ids = torch.tensor(mung_ids, dtype=torch.int64)
+            # mung_ids = [int(obj["object_id"]) for obj in annos]
+            # instances.mung_ids = torch.tensor(mung_ids, dtype=torch.int64)
             # This function filters out "empty instances" which includes small bboxes
             # dataset_dict["instances"] = utils.filter_empty_instances(instances)
             dataset_dict["instances"] = instances

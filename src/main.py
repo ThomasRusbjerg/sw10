@@ -8,7 +8,6 @@ from detectron2.data import MetadataCatalog, DatasetCatalog
 from detectron2.engine import default_argument_parser, launch
 
 from data_handling.detectron2_muscima import (
-    create_muscima_detectron_dataset,
     load_muscima_detectron_dataset,
     get_muscima_classid_mapping,
 )
@@ -44,19 +43,9 @@ def visualise(cfg, data, metadata, n_samples):
 
 
 def main():
-    # from data_handling.prepare_datasets import main
-    # main()
-    # exit()
-    # Create detectron format datasets
-    # training_split_file_path = "data/training_validation_test/training.txt"
-    # val_split_file_path = "data/training_validation_test/validation.txt"
-    # test_split_file_path = "data/training_validation_test/test.txt"
-    # create_muscima_detectron_dataset(training_split_file_path)
-    # exit()
-
     # Register datasets in detectron
     basepath = "data/MUSCIMA++/v2.0/data/staves/training_validation_test/"
-    for dataset in ["training", "validation"]:
+    for dataset in ["training", "validation", "test"]:
         DatasetCatalog.register(
             "muscima_" + dataset,
             lambda dataset=dataset: load_muscima_detectron_dataset(
@@ -75,12 +64,12 @@ def main():
     setattr(args, "num_gpus", 1)
 
     # Predict and visualise
-    setattr(args, "opts", ['MODEL.WEIGHTS', 'src/models/model_0498959.pth'])
+    setattr(args, "opts", ['MODEL.WEIGHTS', 'data/models/omr_jobs_20210604-121910_model_1053359.pth'])
     cfg = detr_train.setup(args)
-    # muscima_metadata = MetadataCatalog.get("muscima_validation")
-    # data = load_muscima_detectron_dataset("data/validation.pickle")
-    # visualise(cfg, data, muscima_metadata, 1)
     
+    # muscima_metadata = MetadataCatalog.get("muscima_validation")
+    # data = load_muscima_detectron_dataset("data/MUSCIMA++/v2.0/data/staves/training_validation_test/test.pickle")
+    # visualise(cfg, data, muscima_metadata, 1)
     # Training
     detr(args)
 
@@ -88,5 +77,5 @@ def main():
 if __name__ == "__main__":
     print(torch.__version__, torch.cuda.is_available())
     print(f"Detectron2 version is {detectron2.__version__}")
-    setup_logger()
+    # setup_logger()
     main()
