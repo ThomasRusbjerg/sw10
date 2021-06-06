@@ -33,6 +33,7 @@ from detectron2.evaluation import COCOEvaluator, verify_results
 
 from detectron2.solver.build import maybe_add_gradient_clipping
 
+from models.detr.datasets.mung_evaluator import MuNGEvaluator
 
 class Trainer(DefaultTrainer):
     """
@@ -123,7 +124,6 @@ def setup(args):
     default_setup(cfg, args)
     return cfg
 
-
 def main(args):
     cfg = setup(args)
     if args.eval_only:
@@ -131,6 +131,7 @@ def main(args):
         DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
             cfg.MODEL.WEIGHTS, resume=args.resume
         )
+        # res = Trainer.test(cfg, model, MuNGEvaluator())
         res = Trainer.test(cfg, model)
         if comm.is_main_process():
             verify_results(cfg, res)

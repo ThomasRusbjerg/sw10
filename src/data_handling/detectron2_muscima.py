@@ -109,15 +109,15 @@ def create_muscima_detectron_dataset(data_dir, split_location):
         }
         for annotation in mung.vertices:
             # Convert bbox mask to image mask
-            mask_projected = annotation.project_on(images[i])
-            segmentations = binary_mask_to_polygon(mask_projected, tolerance=2)
+            # mask_projected = annotation.project_on(images[i])
+            # segmentations = binary_mask_to_polygon(mask_projected, tolerance=2)
             bounding_box = [annotation.left, annotation.top, annotation.right, annotation.bottom]
             img_instance["annotations"].append(
                 {
                     "bbox": bounding_box,
                     "bbox_mode": BoxMode.XYXY_ABS,
                     "category_id": classes[annotation.class_name] -1, # -1 since ids start at 1
-                    "segmentation": segmentations,
+                    # "segmentation": segmentations,
                     "object_id": annotation.id
                 }
             )

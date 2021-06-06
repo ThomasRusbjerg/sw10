@@ -59,10 +59,11 @@ def main():
     # main()
     # exit()
     # Create detectron format datasets
-    # training_split_file_path = "data/training_validation_test/training.txt"
+    # training_dir = "data/MUSCIMA++/v2.0/data/full_page"
+    # training_split = "/training_validation_test/training.txt"
     # val_split_file_path = "data/training_validation_test/validation.txt"
     # test_split_file_path = "data/training_validation_test/test.txt"
-    # create_muscima_detectron_dataset(training_split_file_path)
+    # create_muscima_detectron_dataset(training_dir, training_split)
     # exit()
 
     # Register datasets in detectron
