@@ -79,8 +79,7 @@ class DetrDatasetMapper:
             dict: a format that builtin models in detectron2 accept
         """
         dataset_dict = copy.deepcopy(dataset_dict)  # it will be modified by code below
-        # image = utils.read_image(dataset_dict["file_name"].replace("/user/student.aau.dk/trusbj16/", "") , format=self.img_format)
-        image = utils.read_image(dataset_dict["file_name"], format=self.img_format)
+        image = utils.read_image(dataset_dict["file_name"].replace("/user/student.aau.dk/trusbj16/", ""), format=self.img_format)
         utils.check_image_size(dataset_dict, image)
 
         if self.crop_gen is None:

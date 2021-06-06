@@ -150,14 +150,14 @@ class Detr(nn.Module):
         matcher = HungarianMatcher(
             cost_class=1, cost_bbox=l1_weight, cost_giou=giou_weight
         )
-        weight_dict = {"loss_ce": 1, "loss_bbox": l1_weight, "loss_relations": 1}
+        weight_dict = {"loss_ce": 1, "loss_bbox": l1_weight}
         weight_dict["loss_giou"] = giou_weight
         if deep_supervision:
             aux_weight_dict = {}
             for i in range(dec_layers - 1):
                 aux_weight_dict.update({k + f"_{i}": v for k, v in weight_dict.items()})
             weight_dict.update(aux_weight_dict)
-        losses = ["labels", "boxes", "cardinality", "relations"]
+        losses = ["labels", "boxes", "cardinality"]
         if self.mask_on:
             losses += ["masks"]
         self.criterion = SetCriterion(

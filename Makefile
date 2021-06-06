@@ -13,7 +13,7 @@ IMAGE_URI = eu.gcr.io/$(PROJECT_ID)/$(IMAGE_NAME)
 BUCKET_NAME = sw10-bucket
 PROJECT_NAME = omr
 JOB_DIR = jobs/$(timestamp)
-REGION = europe-west1
+REGION = europe-west4
 # job names must only have letters, numbers, and underscores
 JOB_NAME=$(shell echo "$(curdir)-$(timestamp)" | sed -e 's/-/_/g')
 
@@ -65,6 +65,7 @@ endif
 	--job-dir=gs://$(BUCKET_NAME)/$(PROJECT_NAME)/$(JOB_DIR) \
 	--  \
 	--file=$(FILE) \
+	--output_dir=output \
 
 .PHONY: freeze
 ## freeze: freeze Pipfile.lock dependencies to requirements.txt, only used for building the docker image
