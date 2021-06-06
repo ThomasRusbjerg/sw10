@@ -38,8 +38,8 @@ def visualise_attention_weights(cfg, data):
 
     # get the feature map shape
     h, w = conv_features['res5'].tensors.shape[-2:]
-    # create_decoder_cross_attention_figure(dec_attn_weights, h, w, img)
-    create_encoder_attention_figure(enc_attn_weights, h, w, img)
+    create_decoder_cross_attention_figure(dec_attn_weights, h, w, img)
+    # create_encoder_attention_figure(enc_attn_weights, h, w, img)
 
 
 def create_decoder_cross_attention_figure(dec_attn_weights, h, w, img):

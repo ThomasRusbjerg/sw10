@@ -1,4 +1,5 @@
 MODEL:
+  DEVICE: "cpu"
   META_ARCHITECTURE: "Detr"
   WEIGHTS: "detectron2://ImageNetPretrained/torchvision/R-50.pkl"
   PIXEL_MEAN: [21.409, 21.409, 21.409] # MUSCIMA++

@@ -7,6 +7,8 @@ from detectron2.utils.visualizer import Visualizer
 from detectron2.data import MetadataCatalog, DatasetCatalog
 from detectron2.engine import default_argument_parser, launch
 
+from visualisation.attention_weights import visualise_attention_weights
+
 from data_handling.detectron2_muscima import (
     create_muscima_detectron_dataset,
     load_muscima_detectron_dataset,
@@ -26,21 +28,30 @@ def detr(args):
     )
 
 
+def vis_gt():
+    muscima_metadata = MetadataCatalog.get("muscima_test")
+    data = DatasetCatalog.get("muscima_test")
+    img = cv2.imread(data[89]["file_name"])
+    visualizer = Visualizer(img[:, :, ::-1], metadata=muscima_metadata, scale=0.5)
+    vis = visualizer.draw_dataset_dict(data[89])
+    cv2.imwrite("data/MUSCIMA++/v2.0/visualisations/ground-truth-bboxes.jpg",
+                cv2.bitwise_not(vis.get_image()[:, :, ::-1]))  # ::-1 converts BGR to RGB
+
+
 def visualise(cfg, data, metadata, n_samples):
     pred = DefaultPredictor(cfg)
-    for d in random.sample(data, n_samples):
-        im = cv2.imread(d["file_name"])
-        outputs = pred(im)  # format is documented at https://detectron2.readthedocs.io/tutorials/models.html#model-output-format
-        v = Visualizer(im[:, :, ::-1],
-                    metadata=metadata, 
-                    scale=0.5
-        )
-        out = v.draw_instance_predictions(outputs["instances"].to("cpu"))
-        cv2.imshow(
-            "image", out.get_image()[:, :, ::-1]
-        )  # ::-1 converts BGR to RGB
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+    # for i, d in enumerate(data):
+    #     print(i, d['file_name'])
+    # exit()
+    im = cv2.imread(data[89]["file_name"])
+    outputs = pred(im)  # format is documented at https://detectron2.readthedocs.io/tutorials/models.html#model-output-format
+    v = Visualizer(im[:, :, ::-1],
+                   metadata=metadata,
+                   scale=0.5
+    )
+    out = v.draw_instance_predictions(outputs["instances"].to("cpu"))
+    cv2.imwrite("data/MUSCIMA++/v2.0/visualisations/predictions-bboxes.jpg",
+                cv2.bitwise_not(out.get_image()[:, :, ::-1]))  # ::-1 converts BGR to RGB
 
 
 def main():
@@ -56,7 +67,7 @@ def main():
 
     # Register datasets in detectron
     basepath = "data/MUSCIMA++/v2.0/data/staves/training_validation_test/"
-    for dataset in ["training", "validation"]:
+    for dataset in ["training", "validation", "test"]:
         DatasetCatalog.register(
             "muscima_" + dataset,
             lambda dataset=dataset: load_muscima_detectron_dataset(
@@ -76,13 +87,18 @@ def main():
 
     # Predict and visualise
     # setattr(args, "opts", ['MODEL.WEIGHTS', 'models/model_final.pth'])
+    # setattr(args, "opts", ['MODEL.WEIGHTS', 'src/models/detr/models/orig_detr/omr_jobs_20210604-121910_model_0942479.pth'])
+    setattr(args, "opts", ['MODEL.WEIGHTS', 'src/models/detr/models/rel_detr/omr_jobs_20210525-153853_model_0110879.pth'])
     cfg = detr_train.setup(args)
-    # muscima_metadata = MetadataCatalog.get("muscima_validation")
-    # data = load_muscima_detectron_dataset("data/validation.pickle")
-    # visualise(cfg, data, muscima_metadata, 1)
-    
+    muscima_metadata = MetadataCatalog.get("muscima_test")
+    data = load_muscima_detectron_dataset("data/MUSCIMA++/v2.0/data/staves/training_validation_test/test.pickle")
+    visualise(cfg, data, muscima_metadata, 1)
+    # visualise_attention_weights(cfg, data)
+    vis_gt()
+
+    exit()
     # Training
-    detr(args)
+    # detr(args)
 
 
 if __name__ == "__main__":
