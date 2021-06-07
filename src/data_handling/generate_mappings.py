@@ -3,35 +3,25 @@
 """ Generates mappings for images and classes in muscima++ """
 
 import os
-import json
-import muscima.io
-import glob
-from collections import Counter
 import argparse
-
-from mung.io import read_nodes_from_file
-from tqdm import tqdm
+import json
+from collections import Counter
+from data_handling.muscima_loader import load_all_muscima_annotations
 
 
 def image_mappings(images_dir, output_path):
     img_mappings = []
     for i, img in enumerate(os.listdir(images_dir)):
-        img_name = img[:-4]
+        img_name = os.path.splitext(img)[0]  # cut away the file extension
         img_mappings.append({"name": img_name, "id": i})
-    with open(output_path + 'mapping_img.json', 'w') as f:
+    with open(output_path + '/mapping_img.json', 'w') as f:
         json.dump(img_mappings, f)
 
 
-def class_mappings(annotations_dir, output_path):
+def class_mappings(annotation_dictionary, output_path, remove_line_shaped_or_construct=False):
 
-    names = glob.glob(os.path.join(annotations_dir, "*.xml"))
-    data = {}
-
-    for name in tqdm(names, desc="Reading all objects from MUSCIMA++ annotations"):
-        data[name] = read_nodes_from_file(name)
     datas = []
-
-    for value in data.values():
+    for value in annotation_dictionary.values():
         for val in value:
             datas.append(val)
 
@@ -64,13 +54,13 @@ def class_mappings(annotations_dir, output_path):
     for key, value in c.items():
         if key in ignored_classes:
             continue
-        if args.remove_line_shaped_or_construct:
+        if remove_line_shaped_or_construct:
             if key not in line_shaped_or_construct:
                 filtered_class_id.append(key)
         else:
             filtered_class_id.append(key)
     filtered_class_id.sort()
-    with open(output_path + "mapping_all_classes.json", "w") as f:
+    with open(output_path + "/mapping_all_classes.json", "w") as f:
         f.write("[")
         for i, classname in enumerate(filtered_class_id):
             f.write("""{{
@@ -92,4 +82,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     image_mappings(args.images, args.output_path)
-    class_mappings(args.annotations, args.output_path)
+    class_mappings(args.annotations, args.output_path, args.remove_line_shaped_or_construct)
