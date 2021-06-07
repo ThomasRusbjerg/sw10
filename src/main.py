@@ -28,13 +28,13 @@ def detr(args):
     )
 
 
-def vis_gt():
+def visualise_ground_truth():
     muscima_metadata = MetadataCatalog.get("muscima_test")
     data = DatasetCatalog.get("muscima_test")
     img = cv2.imread(data[89]["file_name"])
     visualizer = Visualizer(img[:, :, ::-1], metadata=muscima_metadata, scale=0.5)
     vis = visualizer.draw_dataset_dict(data[89])
-    cv2.imwrite("data/MUSCIMA++/v2.0/visualisations/ground-truth-bboxes.jpg",
+    cv2.imwrite("data/MUSCIMA++/v2.0/visualisations/ground-truth-output.jpg",
                 cv2.bitwise_not(vis.get_image()[:, :, ::-1]))  # ::-1 converts BGR to RGB
 
 
@@ -50,7 +50,7 @@ def visualise(cfg, data, metadata, n_samples):
                    scale=0.5
     )
     out = v.draw_instance_predictions(outputs["instances"].to("cpu"))
-    cv2.imwrite("data/MUSCIMA++/v2.0/visualisations/predictions-bboxes.jpg",
+    cv2.imwrite("data/MUSCIMA++/v2.0/visualisations/predictions-output.jpg",
                 cv2.bitwise_not(out.get_image()[:, :, ::-1]))  # ::-1 converts BGR to RGB
 
 
@@ -95,7 +95,7 @@ def main():
     data = load_muscima_detectron_dataset("data/MUSCIMA++/v2.0/data/staves/training_validation_test/test.pickle")
     visualise(cfg, data, muscima_metadata, 1)
     # visualise_attention_weights(cfg, data)
-    vis_gt()
+    visualise_ground_truth()
 
     exit()
     # Training

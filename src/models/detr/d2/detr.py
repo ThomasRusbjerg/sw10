@@ -150,14 +150,14 @@ class Detr(nn.Module):
         matcher = HungarianMatcher(
             cost_class=1, cost_bbox=l1_weight, cost_giou=giou_weight
         )
-        weight_dict = {"loss_ce": 1, "loss_bbox": l1_weight}
+        weight_dict = {"loss_ce": 1, "loss_bbox": l1_weight, "loss_relations": 1}
         weight_dict["loss_giou"] = giou_weight
         if deep_supervision:
             aux_weight_dict = {}
             for i in range(dec_layers - 1):
                 aux_weight_dict.update({k + f"_{i}": v for k, v in weight_dict.items()})
             weight_dict.update(aux_weight_dict)
-        losses = ["labels", "boxes", "cardinality"]
+        losses = ["labels", "boxes", "cardinality", "relations"]
         if self.mask_on:
             losses += ["masks"]
         self.criterion = SetCriterion(
@@ -180,12 +180,9 @@ class Detr(nn.Module):
             batched_inputs: a list, batched outputs of :class:`DatasetMapper` .
                 Each item in the list contains the inputs for one image.
                 For now, each item in the list is a dict that contains:
-
                 * image: Tensor, image in (C, H, W) format.
                 * instances: Instances
-
                 Other information that's included in the original dicts, such as:
-
                 * "height", "width" (int): the output resolution of the model, used in inference.
                   See :meth:`postprocess` for details.
         Returns:
@@ -248,7 +245,6 @@ class Detr(nn.Module):
                 The tensor predicts 4-vector (x,y,w,h) box
                 regression values for every queryx
             image_sizes (List[torch.Size]): the input image sizes
-
         Returns:
             results (List[Instances]): a list of #images elements.
         """

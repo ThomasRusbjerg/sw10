@@ -72,23 +72,6 @@ def draw_bounding_boxes_into_image(image_path: str,
         color_name = STANDARD_COLORS[classes_mapping[music_object.class_name] % len(STANDARD_COLORS)]
         color = ImageColor.getrgb(color_name)
         cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
-        # fixme from d2
-        width = x2 - x1
-        height = y2 - y1
-
-        self.output.ax.add_patch(
-            mpl.patches.Rectangle(
-                (x1, y1),
-                width,
-                height,
-                fill=False,
-                edgecolor=color,
-                linewidth=1,
-                alpha=0.5,
-                linestyle="-",
-            )
-        )
-        # fixme from d2
         # cv2.putText(img=img,
         #             text=music_object.class_name + '/' + str(index + 1),
         #             org=(x1, y1), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1,
