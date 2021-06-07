@@ -139,6 +139,20 @@ def main(args):
 
     trainer = Trainer(cfg)
     trainer.resume_or_load(resume=args.resume)
+    # for param in trainer.model.detr.backbone.parameters(): 
+    #     param.requires_grad = False
+    # for param in trainer.model.detr.transformer.encoder.parameters(): 
+    #     param.requires_grad = False
+    # print()
+    # for param in trainer.model.detr.relation_embed.parameters(): 
+    #     param.requires_grad = True
+    # print()
+    # # for param in trainer.model.detr.query_embed.parameters(): 
+    # #     print(param)
+    # #     param.requires_grad = False
+    # print()
+
+
     trainer.train()
 
 

@@ -2,7 +2,7 @@ import cv2, random
 import torch
 import detectron2
 import numpy as np
-from detectron2.utils.logger import setup_logger
+
 from detectron2.engine import DefaultPredictor
 from detectron2.utils.visualizer import Visualizer
 from detectron2.data import MetadataCatalog, DatasetCatalog
@@ -43,19 +43,7 @@ def visualise(cfg, data, metadata, n_samples):
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-
 def main():
-    # from data_handling.prepare_datasets import main
-    # main()
-    # exit()
-    # Create detectron format datasets
-    # training_dir = "data/MUSCIMA++/v2.0/data/full_page"
-    # training_split = "/training_validation_test/training.txt"
-    # val_split_file_path = "data/training_validation_test/validation.txt"
-    # test_split_file_path = "data/training_validation_test/test.txt"
-    # create_muscima_detectron_dataset(training_dir, training_split)
-    # exit()
-
     # Register datasets in detectron
     basepath = "data/MUSCIMA++/v2.0/data/staves/training_validation_test/"
     for dataset in ["training", "validation", "test"]:
@@ -77,18 +65,18 @@ def main():
     setattr(args, "num_gpus", 1)
 
     # Predict and visualise
-    setattr(args, "opts", ['MODEL.WEIGHTS', 'data/omr_jobs_20210602-180916_model_0110879.pth'])
+    setattr(args, "opts", ['MODEL.WEIGHTS', 'data/models/omr_jobs_20210604-121910_model_1053359.pth'])
     cfg = detr_train.setup(args)
         
     # Training
     # pred = DefaultPredictor(cfg)
-    # exit()
     detr(args)
+    exit()
 
     ## Count object instances
-    # muscima_metadata = MetadataCatalog.get("muscima_training")
-    # data = load_muscima_detectron_dataset("data/MUSCIMA++/v2.0/data/measures/training_validation_test/training.pickle")
-    # count_object_instances(data, muscima_metadata)
+    muscima_metadata = MetadataCatalog.get("muscima_test")
+    data = load_muscima_detectron_dataset("data/MUSCIMA++/v2.0/data/staves/training_validation_test/test.pickle")
+    count_object_instances(data, muscima_metadata)
 
     # visualise_dataset(cfg, data, muscima_metadata)
 
@@ -105,7 +93,6 @@ def count_object_instances(data, metadata):
         print(obj)
 
 def visualise_dataset(cfg, data, metadata):
-    visualise(cfg, data, metadata, 3)
     for d in random.sample(data, 3):
         img = cv2.imread(d["file_name"])
         visualizer = Visualizer(img[:, :, ::-1], metadata=metadata, scale=0.5)
@@ -120,5 +107,4 @@ def visualise_dataset(cfg, data, metadata):
 if __name__ == "__main__":
     print(torch.__version__, torch.cuda.is_available())
     print(f"Detectron2 version is {detectron2.__version__}")
-    setup_logger()
     main()
