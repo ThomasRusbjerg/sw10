@@ -1,4 +1,4 @@
-import cv2, os
+import cv2, os, random
 import matplotlib.pyplot as plt
 from detectron2.engine import DefaultPredictor
 
@@ -45,14 +45,23 @@ def visualise_attention_weights(cfg, data):
 def create_decoder_cross_attention_figure(dec_attn_weights, h, w, img):
     fig = plt.figure()
 
-    gs = fig.add_gridspec(2, 2)
-    for i, query_idx in enumerate(range(0, 40, 20)):
-        ax = fig.add_subplot(gs[0, i])
-        ax.imshow(dec_attn_weights[0, query_idx].view(h, w), cmap="Blues", interpolation="spline16")
-        ax.set_title(f"query id: {query_idx}")
-        ax.axis("off")
+    rows = 4
+    columns = 2
+    n_queries_to_show = columns * (rows - 1)
+    random.seed(0)
+    # Draw some random query ids
+    query_ids = random.sample(range(0, dec_attn_weights.shape[1]), n_queries_to_show)
+    gs = fig.add_gridspec(rows, columns)
+    query_count = 0
+    for row_idx in range(rows-1):
+        for column_idx in range(columns):
+            ax = fig.add_subplot(gs[row_idx, column_idx])
+            ax.imshow(dec_attn_weights[0, query_ids[query_count]].view(h, w), cmap="Blues", interpolation="spline16")
+            ax.set_title(f"query id: {query_ids[query_count]}")
+            ax.axis("off")
+            query_count += 1
 
-    ax4 = fig.add_subplot(gs[1, :])
+    ax4 = fig.add_subplot(gs[rows-1, :])
     ax4.imshow(cv2.bitwise_not(img))
     ax4.set_title("input score")
     plt.axis("off")
