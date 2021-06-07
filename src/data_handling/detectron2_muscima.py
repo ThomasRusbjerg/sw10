@@ -1,3 +1,4 @@
+import os
 import json
 import pickle
 import numpy as np
@@ -6,6 +7,7 @@ from pycocotools import mask
 from skimage import measure
 from detectron2.structures import BoxMode
 from tqdm import tqdm
+
 
 def load_muscima_detectron_dataset(split_location):
     file = open(split_location, 'rb')
@@ -49,6 +51,7 @@ def binary_mask_to_polygon(binary_mask, tolerance=0):
 
     return polygons
 
+
 def get_muscima_classid_mapping():
     class_info_path = "data/MUSCIMA++/v2.0/mapping_all_classes.json"
     classes = {}
@@ -58,21 +61,22 @@ def get_muscima_classid_mapping():
             classes[c["name"]] = c["id"]
     return classes
 
-def get_muscima_imgid_mapping():
-    img_info_path = "data/MUSCIMA++/v2.0/mapping_img.json"
-    images_mappings = {}
+
+def get_muscima_imgid_mapping(img_info_path):
     with open(img_info_path) as json_file:
-        data = json.load(json_file)
-        images_mappings = data
+        images_mappings = json.load(json_file)
     return images_mappings
 
-def create_muscima_detectron_dataset(split_location):
-    images_root = "data/MUSCIMA++/v2.0/data/images"
-    mung_root = "data/MUSCIMA++/v2.0/data/annotations"
+
+def create_muscima_detectron_dataset(data_dir, split_location):
+
+    images_root = os.path.join(data_dir, "images")
+    mung_root = os.path.join(data_dir, "annotations")
+    split_location = data_dir + split_location
 
     # Get class id mapping
     classes = get_muscima_classid_mapping()
-    img_id_mapping = get_muscima_imgid_mapping()
+    img_id_mapping = get_muscima_imgid_mapping(data_dir+"/mapping_img.json")
 
     # Load filenames for split
     split = muscima_loader.load_split(split_location)
@@ -89,35 +93,37 @@ def create_muscima_detectron_dataset(split_location):
         img_id = list(filter(lambda img: img['name'] == img_name, img_id_mapping))[0]['id']
         height = images[i].shape[0]
         width = images[i].shape[1]
+
+        # Convert adjacency list to matrix
+        largest_id = np.max([v.id for v in mung.vertices])
+        adj_matrix = np.zeros((largest_id+1, largest_id+1))
+        for edge in mung.edges:
+            adj_matrix[edge] = 1
         img_instance = {
             "file_name": images_root + "/" + img_name + ".png",
             "height": height,
             "width": width,
             "image_id": img_id,
             "annotations": [],
+            "mung_links": adj_matrix
         }
         for annotation in mung.vertices:
             # Convert bbox mask to image mask
-            mask_projected = annotation.project_on(images[i])
-            # Based on https://github.com/cocodataset/cocoapi/issues/131
-            fortran_binary_mask = np.asfortranarray(mask_projected)
-            encoded_mask = mask.encode(fortran_binary_mask)
-            # area = mask.area(encoded_mask)
-            # bounding_box = mask.toBbox(encoded_mask).astype(int)
-            # bounding_box = annotation["bounding_box"]
+            # mask_projected = annotation.project_on(images[i])
+            # segmentations = binary_mask_to_polygon(mask_projected, tolerance=2)
             bounding_box = [annotation.left, annotation.top, annotation.right, annotation.bottom]
-            segmentations = binary_mask_to_polygon(mask_projected, tolerance=2)
             img_instance["annotations"].append(
                 {
                     "bbox": bounding_box,
                     "bbox_mode": BoxMode.XYXY_ABS,
                     "category_id": classes[annotation.class_name] -1, # -1 since ids start at 1
-                    "segmentation": segmentations,
+                    # "segmentation": segmentations,
+                    "object_id": annotation.id
                 }
             )
         dataset.append(img_instance)
 
     # Dump dataset to disk
     filename = split_location.split("/")[-1].split(".")[0] + ".pickle"
-    with open("data/" + filename, "wb") as dumpfile:
+    with open(data_dir + "training_validation_test/" + filename, "wb") as dumpfile:
         pickle.dump(dataset, dumpfile)
