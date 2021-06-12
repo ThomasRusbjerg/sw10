@@ -44,7 +44,7 @@ def visualise(cfg, data, metadata, n_samples):
 
 def main():
     # Register datasets in detectron
-    basepath = "data/MUSCIMA++/v2.0/data/staves/training_validation_test/"
+    basepath = "data/MUSCIMA++/v2.0/data/measures/training_validation_test/"
     for dataset in ["training", "validation", "test"]:
         DatasetCatalog.register(
             "muscima_" + dataset,
@@ -64,7 +64,7 @@ def main():
     setattr(args, "num_gpus", 1)
 
     # Predict and visualise
-    setattr(args, "opts", ['MODEL.WEIGHTS', 'data/models/omr_jobs_20210604-121910_model_1053359.pth'])
+    setattr(args, "opts", ['MODEL.WEIGHTS', 'data/models/converted_model.pth'])
     cfg = detr_train.setup(args)
     
     # muscima_metadata = MetadataCatalog.get("muscima_validation")
