@@ -1,4 +1,5 @@
 import cv2, os, random
+import numpy as np
 import matplotlib.pyplot as plt
 from detectron2.engine import DefaultPredictor
 
@@ -26,7 +27,7 @@ def visualise_attention_weights(cfg, data):
     ]
 
     # propagate through the model
-    pred(img)
+    predictions = pred(img)
 
     for hook in hooks:
         hook.remove()
@@ -38,35 +39,98 @@ def visualise_attention_weights(cfg, data):
 
     # get the feature map shape
     h, w = conv_features['res5'].tensors.shape[-2:]
-    create_decoder_cross_attention_figure(dec_attn_weights, h, w, img)
+    create_decoder_cross_attention_grid_figure(dec_attn_weights, h, w, img, predictions["instances"].pred_boxes)
+    # create_decoder_cross_attention_figure(dec_attn_weights, h, w, img)
     # create_encoder_attention_figure(enc_attn_weights, h, w, img)
 
 
 def create_decoder_cross_attention_figure(dec_attn_weights, h, w, img):
-    fig = plt.figure()
+    from PIL import Image
 
-    rows = 4
+    # img = Image.open("data/MUSCIMA++/v2.0/test_data/staves/images/CVC-MUSCIMA_W-31_N-01_D-ideal_1.png")
+    img = Image.open("data/MUSCIMA++/v2.0/data/staves/images/CVC-MUSCIMA_W-01_N-10_D-ideal_1.png")
+    width, height = img.size
+    from sklearn.preprocessing import minmax_scale
+    scaled_attention = minmax_scale(dec_attn_weights[0, 0].view(h, w).numpy(), feature_range=(0, 255))
+    attention = Image.fromarray(scaled_attention, 'L').resize((width, height))
+
+    r, g, _ = img.split()
+
+    result = Image.merge('RGB', (r, g, attention))
+    result.show()
+
+    exit()
+
+
+    background = cv2.bitwise_not(img)
+
+    overlay = dec_attn_weights[0, 0].numpy()
+    # overlay = cv2.imread("img2.jpg")
+    height, width = background.shape[:2]
+    overlay = cv2.resize(overlay, (width, height))
+    overlay = np.expand_dims(overlay, axis=-1)
+
+    background = cv2.addWeighted(background, 1, overlay, 0.9, 0)
+    # background[:, :, 2] = background[:, :, 2] + (overlay * 50)
+
+    # mycmap = plt.cm.Blues
+    # mycmap._init()
+    # mycmap._lut[:, -1] = np.linspace(0, 0.8, 255 + 4)
+    #
+    # fig, ax = plt.subplots(1, 1)
+    # ax.imshow(background)
+    # ax.contourf(overlay[0], overlay[1], overlay.shape, cmap=mycmap)
+    # plt.savefig("test.jpg")
+
+    save_path = "data/MUSCIMA++/v2.0/visualisations"
+    image_name = "decoder-attention-combined.jpg"
+    cv2.imwrite(os.path.join(save_path, image_name), background)
+    print(f"Saved figure of decoder cross-attention in {save_path}")
+
+
+def create_decoder_cross_attention_grid_figure(dec_attn_weights, h, w, img, boxes):
+    fig = plt.figure(figsize=(8, 1))
+    rows = 2
     columns = 2
     n_queries_to_show = columns * (rows - 1)
-    random.seed(0)
+    random.seed(10)
     # Draw some random query ids
     query_ids = random.sample(range(0, dec_attn_weights.shape[1]), n_queries_to_show)
-    gs = fig.add_gridspec(rows, columns)
+    gs = fig.add_gridspec(rows, columns, )
     query_count = 0
     for row_idx in range(rows-1):
         for column_idx in range(columns):
             ax = fig.add_subplot(gs[row_idx, column_idx])
-            ax.imshow(dec_attn_weights[0, query_ids[query_count]].view(h, w), cmap="Blues", interpolation="spline16")
-            ax.set_title(f"query id: {query_ids[query_count]}")
+            ax.imshow(dec_attn_weights[0, query_ids[query_count]].view(h, w),
+                      cmap="Blues", interpolation="spline16")
+            # ax.set_title(f"query id: {query_ids[query_count]}")
             ax.axis("off")
             query_count += 1
 
-    ax4 = fig.add_subplot(gs[rows-1, :])
+    # Add image below with boxes corresponsing to queries
+    ax4 = fig.add_subplot(gs[rows - 1, 0])
     ax4.imshow(cv2.bitwise_not(img))
-    ax4.set_title("input score")
+    box = boxes[query_ids[0]]
+    x0, y0, x1, y1 = box.tensor.numpy()[0]
+    ax4.add_patch(plt.Rectangle((x0, y0), x1 - x0, y1 - y0,
+                               fill=False, color='blue', linewidth=2))
     plt.axis("off")
-    fig.tight_layout()
+    ax5 = fig.add_subplot(gs[rows - 1, 1])
+    ax5.imshow(cv2.bitwise_not(img))
+    box = boxes[query_ids[1]]
+    x0, y0, x1, y1 = box.tensor.numpy()[0]
+    ax5.add_patch(plt.Rectangle((x0, y0), x1 - x0, y1 - y0,
+                               fill=False, color='blue', linewidth=2))
+    plt.axis("off")
 
+    plt.subplots_adjust(
+        left=0,      # the left side of the subplots of the figure
+        right=1,    # the right side of the subplots of the figure
+        bottom=0,   # the bottom of the subplots of the figure
+        top=1,      # the top of the subplots of the figure
+        wspace=0.03,   # the amount of width reserved for blank space between subplots
+        hspace=-0.65,  # the amount of height reserved for white space between subplots
+    )
     save_path = "data/MUSCIMA++/v2.0/visualisations"
     image_name = "decoder-attention.jpg"
     fig.savefig(os.path.join(save_path, image_name))

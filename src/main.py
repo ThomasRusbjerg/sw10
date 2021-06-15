@@ -31,11 +31,11 @@ def detr(args):
 def visualise_ground_truth():
     muscima_metadata = MetadataCatalog.get("muscima_test")
     data = DatasetCatalog.get("muscima_test")
-    img = cv2.imread(data[89]["file_name"])
-    visualizer = Visualizer(img[:, :, ::-1], metadata=muscima_metadata, scale=0.5)
-    vis = visualizer.draw_dataset_dict(data[89])
+    img = cv2.imread(data[590]["file_name"])
+    visualizer = Visualizer(cv2.bitwise_not(img)[:, :, ::-1], metadata=muscima_metadata, scale=0.5)
+    vis = visualizer.draw_dataset_dict(data[590])
     cv2.imwrite("data/MUSCIMA++/v2.0/visualisations/ground-truth-output.jpg",
-                cv2.bitwise_not(vis.get_image()[:, :, ::-1]))  # ::-1 converts BGR to RGB
+                vis.get_image()[:, :, ::-1])  # ::-1 converts BGR to RGB
 
 
 def visualise(cfg, data, metadata, n_samples):
@@ -43,15 +43,15 @@ def visualise(cfg, data, metadata, n_samples):
     # for i, d in enumerate(data):
     #     print(i, d['file_name'])
     # exit()
-    im = cv2.imread(data[89]["file_name"])
+    im = cv2.imread(data[590]["file_name"])
     outputs = pred(im)  # format is documented at https://detectron2.readthedocs.io/tutorials/models.html#model-output-format
-    v = Visualizer(im[:, :, ::-1],
+    v = Visualizer(cv2.bitwise_not(im)[:, :, ::-1],
                    metadata=metadata,
                    scale=0.5
     )
     out = v.draw_instance_predictions(outputs["instances"].to("cpu"))
     cv2.imwrite("data/MUSCIMA++/v2.0/visualisations/predictions-output.jpg",
-                cv2.bitwise_not(out.get_image()[:, :, ::-1]))  # ::-1 converts BGR to RGB
+                out.get_image()[:, :, ::-1])  # ::-1 converts BGR to RGB
 
 
 def main():
@@ -67,7 +67,7 @@ def main():
     # exit()
 
     # Register datasets in detectron
-    basepath = "data/MUSCIMA++/v2.0/data/staves/training_validation_test/"
+    basepath = "data/MUSCIMA++/v2.0/data/measures/training_validation_test/"
     for dataset in ["training", "validation", "test"]:
         DatasetCatalog.register(
             "muscima_" + dataset,
@@ -89,10 +89,13 @@ def main():
     # Predict and visualise
     # setattr(args, "opts", ['MODEL.WEIGHTS', 'models/model_final.pth'])
     # setattr(args, "opts", ['MODEL.WEIGHTS', 'src/models/detr/models/orig_detr/omr_jobs_20210604-121910_model_0942479.pth'])
-    setattr(args, "opts", ['MODEL.WEIGHTS', 'src/models/detr/models/rel_detr/omr_jobs_20210525-153853_model_0110879.pth'])
+    # setattr(args, "opts", ['MODEL.WEIGHTS', 'src/models/detr/models/rel_detr/omr_jobs_20210525-153853_model_0110879.pth'])
+    # setattr(args, "opts", ['MODEL.WEIGHTS', 'src/models/detr/models/rel_detr/omr_jobs_20210606-073147_model_0055439.pth'])
+    setattr(args, "opts", ['MODEL.WEIGHTS', 'src/models/detr/models/rel_detr/measures.pth'])
+
     cfg = detr_train.setup(args)
     muscima_metadata = MetadataCatalog.get("muscima_test")
-    data = load_muscima_detectron_dataset("data/MUSCIMA++/v2.0/data/staves/training_validation_test/test.pickle")
+    data = load_muscima_detectron_dataset("data/MUSCIMA++/v2.0/data/measures/training_validation_test/test.pickle")
     visualise(cfg, data, muscima_metadata, 1)
     # visualise_attention_weights(cfg, data)
     visualise_ground_truth()
