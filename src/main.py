@@ -45,7 +45,7 @@ def visualise(cfg, data, metadata, n_samples):
 
 def main():
     # Register datasets in detectron
-    basepath = "data/MUSCIMA++/v2.0/data/staves/training_validation_test/"
+    basepath = "data/MUSCIMA++/v2.0/data/measures/training_validation_test/"
     for dataset in ["training", "validation", "test"]:
         DatasetCatalog.register(
             "muscima_" + dataset,
@@ -65,18 +65,17 @@ def main():
     setattr(args, "num_gpus", 1)
 
     # Predict and visualise
-    setattr(args, "opts", ['MODEL.WEIGHTS', 'data/models/omr_jobs_20210604-121910_model_1053359.pth'])
+    setattr(args, "opts", ['MODEL.WEIGHTS', 'data/models/omr_jobs_20210612-112837_model_final.pth'])
     cfg = detr_train.setup(args)
         
     # Training
     # pred = DefaultPredictor(cfg)
     detr(args)
-    exit()
 
     ## Count object instances
-    muscima_metadata = MetadataCatalog.get("muscima_test")
-    data = load_muscima_detectron_dataset("data/MUSCIMA++/v2.0/data/staves/training_validation_test/test.pickle")
-    count_object_instances(data, muscima_metadata)
+    # muscima_metadata = MetadataCatalog.get("muscima_test")
+    # data = load_muscima_detectron_dataset("data/MUSCIMA++/v2.0/data/staves/training_validation_test/test.pickle")
+    # count_object_instances(data, muscima_metadata)
 
     # visualise_dataset(cfg, data, muscima_metadata)
 
@@ -108,3 +107,5 @@ if __name__ == "__main__":
     print(torch.__version__, torch.cuda.is_available())
     print(f"Detectron2 version is {detectron2.__version__}")
     main()
+    import time
+    time.sleep(20*60)
