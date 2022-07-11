@@ -1,1 +1,4 @@
-# sw10
+# DETR for Combined Object Detection and Notation Assembly in Optical Music Recognition
+This project was about using the [DETR architecture](https://arxiv.org/abs/2005.12872) to identify and classify musical objects **and their relations** in images of handwritten sheet music (in western music notation). The dataset used can be found here: [MUSCIMA++](https://ufal.mff.cuni.cz/muscima). Our main contribution was extending the DETR architecture to be able to classify the relations between objects such that end-to-end object detection and notation assembly can be handled holistically.
+## Repo content
+This repository contains the code used to train and evaluate our model. The training was partly done on a AAU provided Nvidia DGX System and on Google Cloud using the AI Platform. The thesis report is located in the repository as well [mi1014f21_thesis.pdf](mi1014f21_thesis.pdf).
